@@ -8,11 +8,24 @@ from parser.core.results import TechniqueResult
 
 
 class MultiLineClustering(BaseTechnique):
-    """Cluster vertically-adjacent bars and link to text for classification."""
-    
+    """Cluster vertically-adjacent bars and link to text for classification.
+
+    This technique groups bars that are vertically adjacent (within ADJACENCY_THRESHOLD pixels)
+    and horizontally overlapping. Groups are then classified as 'multi_line' (standard) or
+    'multi_line_offset' (if any linked offset redaction has type='gap').
+
+    Bar Structure Requirements:
+        Bar dictionaries must contain coordinate keys: 'x', 'y', 'w', 'h'
+        (or 'x2', 'y2' as alternatives to computed coordinates).
+        Example:
+            {'x': 100, 'y': 100, 'x2': 200, 'y2': 120, 'w': 100, 'h': 20}
+            or
+            {'x': 100, 'y': 100, 'w': 100, 'h': 20}
+    """
+
     name = "multi_line_clustering"
     description = "Groups adjacent bars as multi-line redactions and links to OCR text"
-    
+
     ADJACENCY_THRESHOLD = 30  # pixels - bars closer than this are considered adjacent
     
     def can_process(self, page) -> bool:
