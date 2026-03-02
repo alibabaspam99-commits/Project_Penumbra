@@ -33,7 +33,7 @@
 
 ---
 
-## New Findings - Batch 2 Review
+## New Findings - Batch 2 Review (Extracted Subset)
 
 ### 6. Image 51 - Multi-line Redaction
 - **Type**: Multiple text lines redacted together
@@ -50,6 +50,15 @@
 - **Status**: ✅ Noted - DIFFERENT pattern, mark as special case
 - **Action**: Investigate text positioning and redaction alignment in Phase 2
 - **Note**: Off-set suggests possible OCR/alignment challenges
+
+## New Findings - Original PDF Review (69 Redactions)
+
+### 9. Image 21 (Original) - Multi-line with Text Offset
+- **Type**: Multiple redacted lines with visible text offset between bars
+- **Status**: ✅ Noted - CANONICAL test case for offset detection
+- **Action**: Use as primary test case for OCR-based offset detection in Phase 2
+- **Note**: Perfect example for OCR-based discovery - text positioning shows misalignment
+- **Phase 2 Strategy**: OCR can detect this pattern better than image analysis
 
 ---
 
