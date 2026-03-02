@@ -25,15 +25,12 @@ def upgrade() -> None:
     sa.Column('username', sa.String(length=255), nullable=False),
     sa.Column('email', sa.String(length=255), nullable=False),
     sa.Column('hashed_password', sa.String(length=255), nullable=False),
-    sa.Column('is_active', sa.Boolean(), nullable=True),
-    sa.Column('is_admin', sa.Boolean(), nullable=True),
+    sa.Column('is_active', sa.Boolean(), nullable=False, server_default='true'),
+    sa.Column('is_admin', sa.Boolean(), nullable=False, server_default='false'),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index('idx_user_email', 'users', ['email'], unique=False)
-    op.create_index('idx_user_is_active', 'users', ['is_active'], unique=False)
-    op.create_index('idx_user_username', 'users', ['username'], unique=False)
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
     op.create_index(op.f('ix_users_id'), 'users', ['id'], unique=False)
     op.create_index(op.f('ix_users_is_active'), 'users', ['is_active'], unique=False)
@@ -53,10 +50,6 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index('idx_batch_created_at', 'batch_jobs', ['created_at'], unique=False)
-    op.create_index('idx_batch_status', 'batch_jobs', ['status'], unique=False)
-    op.create_index('idx_batch_user_id', 'batch_jobs', ['user_id'], unique=False)
-    op.create_index('idx_batch_user_status', 'batch_jobs', ['user_id', 'status'], unique=False)
     op.create_index(op.f('ix_batch_jobs_created_at'), 'batch_jobs', ['created_at'], unique=False)
     op.create_index(op.f('ix_batch_jobs_id'), 'batch_jobs', ['id'], unique=False)
     op.create_index(op.f('ix_batch_jobs_status'), 'batch_jobs', ['status'], unique=False)
@@ -76,10 +69,6 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index('idx_document_created_at', 'documents', ['created_at'], unique=False)
-    op.create_index('idx_document_status', 'documents', ['status'], unique=False)
-    op.create_index('idx_document_user_id', 'documents', ['user_id'], unique=False)
-    op.create_index('idx_document_user_status', 'documents', ['user_id', 'status'], unique=False)
     op.create_index(op.f('ix_documents_created_at'), 'documents', ['created_at'], unique=False)
     op.create_index(op.f('ix_documents_id'), 'documents', ['id'], unique=False)
     op.create_index(op.f('ix_documents_status'), 'documents', ['status'], unique=False)
@@ -89,7 +78,7 @@ def upgrade() -> None:
     sa.Column('document_id', sa.Integer(), nullable=False),
     sa.Column('page_number', sa.Integer(), nullable=False),
     sa.Column('technique_name', sa.String(length=255), nullable=False),
-    sa.Column('success', sa.Boolean(), nullable=True),
+    sa.Column('success', sa.Boolean(), nullable=False, server_default='false'),
     sa.Column('confidence', sa.Float(), nullable=True),
     sa.Column('data', sa.JSON(), nullable=True),
     sa.Column('error_message', sa.String(length=512), nullable=True),
@@ -98,12 +87,6 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['document_id'], ['documents.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index('idx_analysis_doc_page', 'analysis_results', ['document_id', 'page_number'], unique=False)
-    op.create_index('idx_analysis_doc_technique', 'analysis_results', ['document_id', 'technique_name'], unique=False)
-    op.create_index('idx_analysis_document_id', 'analysis_results', ['document_id'], unique=False)
-    op.create_index('idx_analysis_page_number', 'analysis_results', ['page_number'], unique=False)
-    op.create_index('idx_analysis_success', 'analysis_results', ['success'], unique=False)
-    op.create_index('idx_analysis_technique_name', 'analysis_results', ['technique_name'], unique=False)
     op.create_index(op.f('ix_analysis_results_created_at'), 'analysis_results', ['created_at'], unique=False)
     op.create_index(op.f('ix_analysis_results_document_id'), 'analysis_results', ['document_id'], unique=False)
     op.create_index(op.f('ix_analysis_results_id'), 'analysis_results', ['id'], unique=False)
@@ -119,37 +102,20 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_analysis_results_id'), table_name='analysis_results')
     op.drop_index(op.f('ix_analysis_results_document_id'), table_name='analysis_results')
     op.drop_index(op.f('ix_analysis_results_created_at'), table_name='analysis_results')
-    op.drop_index('idx_analysis_technique_name', table_name='analysis_results')
-    op.drop_index('idx_analysis_success', table_name='analysis_results')
-    op.drop_index('idx_analysis_page_number', table_name='analysis_results')
-    op.drop_index('idx_analysis_document_id', table_name='analysis_results')
-    op.drop_index('idx_analysis_doc_technique', table_name='analysis_results')
-    op.drop_index('idx_analysis_doc_page', table_name='analysis_results')
     op.drop_table('analysis_results')
     op.drop_index(op.f('ix_documents_user_id'), table_name='documents')
     op.drop_index(op.f('ix_documents_status'), table_name='documents')
     op.drop_index(op.f('ix_documents_id'), table_name='documents')
     op.drop_index(op.f('ix_documents_created_at'), table_name='documents')
-    op.drop_index('idx_document_user_status', table_name='documents')
-    op.drop_index('idx_document_user_id', table_name='documents')
-    op.drop_index('idx_document_status', table_name='documents')
-    op.drop_index('idx_document_created_at', table_name='documents')
     op.drop_table('documents')
     op.drop_index(op.f('ix_batch_jobs_user_id'), table_name='batch_jobs')
     op.drop_index(op.f('ix_batch_jobs_status'), table_name='batch_jobs')
     op.drop_index(op.f('ix_batch_jobs_id'), table_name='batch_jobs')
     op.drop_index(op.f('ix_batch_jobs_created_at'), table_name='batch_jobs')
-    op.drop_index('idx_batch_user_status', table_name='batch_jobs')
-    op.drop_index('idx_batch_user_id', table_name='batch_jobs')
-    op.drop_index('idx_batch_status', table_name='batch_jobs')
-    op.drop_index('idx_batch_created_at', table_name='batch_jobs')
     op.drop_table('batch_jobs')
     op.drop_index(op.f('ix_users_username'), table_name='users')
     op.drop_index(op.f('ix_users_is_active'), table_name='users')
     op.drop_index(op.f('ix_users_id'), table_name='users')
     op.drop_index(op.f('ix_users_email'), table_name='users')
-    op.drop_index('idx_user_username', table_name='users')
-    op.drop_index('idx_user_is_active', table_name='users')
-    op.drop_index('idx_user_email', table_name='users')
     op.drop_table('users')
     # ### end Alembic commands ###

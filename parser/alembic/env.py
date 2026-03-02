@@ -71,10 +71,16 @@ def run_migrations_online() -> None:
 
     """
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = os.getenv(
+    sqlalchemy_url = os.getenv(
         "DATABASE_URL",
-        configuration.get("sqlalchemy.url", "postgresql://user:password@localhost/penumbra")
+        configuration.get("sqlalchemy.url")
     )
+    if not sqlalchemy_url:
+        raise ValueError(
+            "DATABASE_URL environment variable must be set. "
+            "Example: postgresql://user:password@host:5432/penumbra"
+        )
+    configuration["sqlalchemy.url"] = sqlalchemy_url
 
     connectable = engine_from_config(
         configuration,
