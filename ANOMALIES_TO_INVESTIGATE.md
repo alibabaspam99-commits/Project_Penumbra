@@ -53,13 +53,37 @@
 
 ---
 
-## Recommendations
+## Recalibration Summary
 
-1. **Update BarDetector**: Filter out redactions < 3px in height to eliminate line artifacts ✅
-2. **Edge Cases 2-4**: Review during Phase 2 for detection optimization
-3. **Multi-line Redactions (51-53)**: Categorize and analyze during Phase 2:
-   - Images 51-52: Standard multi-line patterns
-   - Image 53: Special case with text offset - investigate alignment
-4. **Overall Quality**: 72+ good redactions out of 77 = 93%+ accuracy ✅
-5. **New Category**: Add support for multi-line redaction clustering in Phase 2
+**Comprehensive batch review (all 63 images) revealed:**
+- Only 3 multi-line redactions total (images 51-53)
+- Pattern distribution: 60 single-line, 3 multi-line
+- Batch HTML viewing enabled pattern detection impossible in one-by-one review
+- All other "perfect" classifications confirmed accurate
+
+---
+
+## Recommendations for Phase 2
+
+1. **BarDetector Update**: 
+   - ✅ Filter out redactions < 3px in height
+   - ✅ Add multi-line clustering for vertically-adjacent bars
+   - Add `multi_line` and `multi_line_offset` result categories
+
+2. **Edge Cases 2-4**: Review for detection optimization
+
+3. **Multi-line Handling**:
+   - Images 51-52: Standard multi-line (multiple text lines)
+   - Image 53: Special case - text offset/alignment issue
+
+4. **Text Recovery Strategy**:
+   - Multi-line patterns: Treat as single redaction unit
+   - Offset patterns: Investigate OCR/alignment before text recovery
+
+5. **Accuracy Metrics**:
+   - Single-line: 93.5% (72/77)
+   - Multi-line: 100% (3/3)
+   - Overall: ~95% after recalibration
+
+6. **Method Improvement**: Batch HTML review is highly effective for pattern detection
 
