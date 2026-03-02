@@ -76,9 +76,16 @@ class BarDetector(BaseTechnique):
             )
 
     def _detect_bars_by_clustering(
-        self, img, dark_threshold=20, min_cluster_pixels=500
+        self, img, dark_threshold=20, min_cluster_pixels=500, min_bar_height=3
     ) -> List[Dict[str, Any]]:
-        """Detect redaction bars by clustering dark pixels"""
+        """Detect redaction bars by clustering dark pixels
+        
+        Args:
+            img: Image array
+            dark_threshold: Pixel value threshold for dark detection (0-255)
+            min_cluster_pixels: Minimum dark pixels to form a cluster
+            min_bar_height: Minimum height in pixels to avoid thin line artifacts
+        """
         # Convert to grayscale
         if len(img.shape) == 3:
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -109,8 +116,8 @@ class BarDetector(BaseTechnique):
             # Check aspect ratio
             aspect_ratio = float(max(w, h)) / float(min(w, h)) if min(w, h) > 0 else 0
 
-            # Accept if bar-like
-            if aspect_ratio >= 1.1 and min(w, h) >= 5:
+            # Accept if bar-like: must be elongated AND have minimum height to avoid line artifacts
+            if aspect_ratio >= 1.1 and min(w, h) >= 5 and h >= min_bar_height:
                 bars.append({
                     'x': x_min,
                     'y': y_min,
