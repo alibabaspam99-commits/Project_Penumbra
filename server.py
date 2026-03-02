@@ -103,7 +103,7 @@ async def get_techniques():
     }
 
 
-@app.post("/documents/upload")
+@app.post("/api/upload")
 async def upload_pdf(file: UploadFile = File(...)):
     """Upload a PDF file for analysis"""
     try:
@@ -138,7 +138,7 @@ async def upload_pdf(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/documents")
+@app.get("/api/documents")
 async def list_documents(skip: int = 0, limit: int = 20):
     """Get list of uploaded documents"""
     docs = list(document_registry.values())
@@ -151,7 +151,7 @@ async def list_documents(skip: int = 0, limit: int = 20):
     }
 
 
-@app.post("/documents/{document_id}/analyze")
+@app.post("/api/analyze/{document_id}")
 async def analyze_pdf(document_id: str, request_data: dict = None):
     """
     Analyze a PDF with selected techniques
@@ -232,7 +232,7 @@ async def analyze_pdf(document_id: str, request_data: dict = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/documents/{document_id}/analysis")
+@app.get("/api/results/{document_id}")
 async def get_analysis_results(document_id: str):
     """Get analysis results for a document"""
     try:
@@ -434,7 +434,7 @@ async def websocket_analyze(websocket: WebSocket):
             pass
 
 
-@app.delete("/documents/{document_id}")
+@app.delete("/api/documents/{document_id}")
 async def delete_document(document_id: str):
     """Delete an uploaded document"""
     try:
