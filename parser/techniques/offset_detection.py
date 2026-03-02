@@ -51,14 +51,15 @@ class OffsetDetection(BaseTechnique):
             
             # Analyze relationships between text boxes and bars
             offset_redactions = []
-            
+            flagged = []
+
             for text_idx, text_box in enumerate(text_boxes):
                 for bar_idx, bar in enumerate(bars):
                     relationship = self._analyze_text_bar_relationship(text_box, bar)
-                    
+
                     if relationship and relationship['type'] in ['overlap', 'gap']:
                         score = self._calculate_alignment_score(relationship)
-                        
+
                         offset_item = {
                             'text_box_idx': text_idx,
                             'bar_idx': bar_idx,
@@ -67,16 +68,24 @@ class OffsetDetection(BaseTechnique):
                             'alignment_score': score
                         }
                         offset_redactions.append(offset_item)
-            
+
+                        # Flag low-confidence matches
+                        if score < 0.5:
+                            flagged.append({
+                                'text_idx': text_idx,
+                                'bar_idx': bar_idx,
+                                'reason': 'low_alignment_score'
+                            })
+
             return TechniqueResult(
                 technique_name=self.name,
                 success=True,
                 confidence=self._calculate_overall_confidence(offset_redactions),
                 data={
                     'offset_redactions': offset_redactions,
-                    'bar_count': len(bars),
-                    'text_box_count': len(text_boxes),
-                    'relationship_count': len(offset_redactions)
+                    'flagged': flagged,
+                    'offset_count': len(offset_redactions),
+                    'flagged_count': len(flagged)
                 },
                 error=None
             )
