@@ -1,0 +1,2382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PENUMBRA-001 — Project Brief: Defeating Flawed PDF Redactions at Scale</title>
+	
+	 <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    /* Sidebar Styles */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 250px;
+      height: 100%;
+      background-color: #333;
+      padding-top: 60px;
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar table {
+      width: 100%;
+    }
+
+    .sidebar td {
+      padding: 15px 20px;
+    }
+
+    .sidebar a {
+      color: white;
+      text-decoration: none;
+      display: block;
+    }
+
+    .sidebar a:hover {
+      color: #4CAF50;
+    }
+
+    /* Collapsed State */
+    .sidebar.collapsed {
+      transform: translateX(-250px);
+    }
+
+    /* Toggle Button */
+    .toggle-btn {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 100;
+      background-color: #333;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      font-size: 20px;
+      cursor: pointer;
+      transition: left 0.3s ease;
+    }
+
+    .toggle-btn.shifted {
+      left: 260px;
+    }
+
+    /* Main Content */
+    .main-content {
+      margin-left: 250px;
+      padding: 20px;
+      transition: margin-left 0.3s ease;
+    }
+
+    .main-content.expanded {
+      margin-left: 0;
+    }
+  </style>
+	
+	
+    <style>
+        :root {
+            --bg: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #1c2333;
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-red: #f85149;
+            --accent-orange: #d29922;
+            --accent-purple: #bc8cff;
+            --border: #30363d;
+            --highlight-bg: #1f2a37;
+            --code-bg: #0d1117;
+            --keynote-bg: #1a1e2e;
+            --keynote-border: #58a6ff;
+            --important-bg: #2a1a1a;
+            --important-border: #f85149;
+            --charlie-bg: #1a2a1a;
+            --charlie-border: #3fb950;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 16px;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* ═══ HEADER ═══ */
+        .doc-header {
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 40px;
+            background: var(--bg-secondary);
+            text-align: center;
+        }
+        .doc-header h1 {
+            font-size: 2.2em;
+            color: var(--accent);
+            margin-bottom: 10px;
+            letter-spacing: 4px;
+        }
+        .doc-header .subtitle {
+            font-size: 1.1em;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+        .chain-info {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            font-size: 0.85em;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+        .chain-info span { font-family: monospace; }
+
+        /* ═══ NAVIGATION ═══ */
+        nav {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px 30px;
+            margin-bottom: 40px;
+            position: sticky;
+            top: 10px;
+            z-index: 100;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        nav h2 {
+            color: var(--accent);
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            letter-spacing: 2px;
+        }
+        nav ol {
+            list-style: none;
+            counter-reset: toc;
+        }
+        nav > ol > li {
+            counter-increment: toc;
+            margin-bottom: 4px;
+        }
+        nav > ol > li::before {
+            content: counter(toc) ". ";
+            color: var(--accent);
+            font-weight: bold;
+        }
+        nav a {
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.95em;
+        }
+        nav a:hover { color: var(--accent); text-decoration: underline; }
+        nav ol ol {
+            margin-left: 20px;
+            list-style: none;
+            counter-reset: subtoc;
+        }
+        nav ol ol li {
+            counter-increment: subtoc;
+            font-size: 0.9em;
+            color: var(--text-muted);
+        }
+        nav ol ol li::before {
+            content: counter(toc) "." counter(subtoc) " ";
+            color: var(--accent);
+            font-size: 0.85em;
+        }
+
+        /* ═══ SECTIONS ═══ */
+        section {
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid var(--border);
+        }
+        h2 {
+            color: var(--accent);
+            font-size: 1.6em;
+            margin-bottom: 20px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--accent);
+            letter-spacing: 1px;
+        }
+        h3 {
+            color: var(--accent-purple);
+            font-size: 1.25em;
+            margin: 25px 0 12px;
+        }
+        h4 {
+            color: var(--accent-orange);
+            font-size: 1.05em;
+            margin: 20px 0 8px;
+        }
+        p { margin-bottom: 14px; }
+        ul, ol { margin: 10px 0 14px 25px; }
+        li { margin-bottom: 6px; }
+
+        /* ═══ SPECIAL BLOCKS ═══ */
+        .keynote {
+            background: var(--keynote-bg);
+            border-left: 4px solid var(--keynote-border);
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .keynote::before {
+            content: "🔑 KEYNOTE";
+            display: block;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 8px;
+            font-size: 0.85em;
+            letter-spacing: 2px;
+        }
+        .important {
+            background: var(--important-bg);
+            border-left: 4px solid var(--important-border);
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .important::before {
+            content: "⚠️ CRITICAL";
+            display: block;
+            font-weight: bold;
+            color: var(--accent-red);
+            margin-bottom: 8px;
+            font-size: 0.85em;
+            letter-spacing: 2px;
+        }
+        .charlie {
+            background: var(--charlie-bg);
+            border-left: 4px solid var(--charlie-border);
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .charlie::before {
+            content: "🧵 CHARLIE DAY ENERGY";
+            display: block;
+            font-weight: bold;
+            color: var(--accent-green);
+            margin-bottom: 8px;
+            font-size: 0.85em;
+            letter-spacing: 2px;
+        }
+        .thinking {
+            background: var(--bg-tertiary);
+            border-left: 4px solid var(--text-muted);
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            color: var(--text-muted);
+        }
+        .thinking::before {
+            content: "💭 THINKING DATA";
+            display: block;
+            font-weight: bold;
+            font-style: normal;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-size: 0.85em;
+            letter-spacing: 2px;
+        }
+        .summary-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .summary-box::before {
+            content: "📋 SUMMARY";
+            display: block;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 10px;
+            font-size: 0.85em;
+            letter-spacing: 2px;
+        }
+
+        /* ═══ CODE ═══ */
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 16px;
+            overflow-x: auto;
+            font-size: 0.88em;
+            line-height: 1.5;
+            margin: 14px 0;
+        }
+        code {
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+        }
+        p code, li code {
+            background: var(--bg-tertiary);
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: var(--accent-orange);
+        }
+
+        /* ═══ COLLAPSIBLE ═══ */
+        details {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 14px 0;
+        }
+        details > summary {
+            padding: 12px 18px;
+            cursor: pointer;
+            font-weight: bold;
+            color: var(--accent);
+            user-select: none;
+        }
+        details > summary:hover { background: var(--bg-tertiary); border-radius: 8px; }
+        details[open] > summary { border-bottom: 1px solid var(--border); border-radius: 8px 8px 0 0; }
+        details > .detail-content { padding: 18px; }
+
+        /* ═══ TABLES ═══ */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 14px 0;
+            font-size: 0.92em;
+        }
+        th, td {
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+        th {
+            background: var(--bg-tertiary);
+            color: var(--accent);
+            font-weight: bold;
+        }
+        tr:nth-child(even) { background: var(--bg-secondary); }
+
+        /* ═══ MISC ═══ */
+        .tier-label {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-right: 6px;
+        }
+        .tier-0 { background: #1a4a1a; color: #3fb950; }
+        .tier-1 { background: #1a3a4a; color: #58a6ff; }
+        .tier-2 { background: #4a3a1a; color: #d29922; }
+        .tier-3 { background: #4a1a1a; color: #f85149; }
+
+        .highlight { background: #2a2a00; padding: 2px 4px; border-radius: 3px; }
+
+        hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 30px 0;
+        }
+
+        .ascii-diagram {
+            font-family: monospace;
+            font-size: 0.85em;
+            line-height: 1.4;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        @media (max-width: 768px) {
+            body { padding: 12px; font-size: 14px; }
+            nav { position: static; }
+            .doc-header h1 { font-size: 1.5em; }
+            .chain-info { flex-direction: column; gap: 5px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- DOCUMENT HEADER                                                 -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<header class="doc-header">
+    <h1>PROJECT PENUMBRA</h1>
+    <div class="subtitle">Defeating Flawed PDF Redactions at Scale Through Anti-Aliasing Artifact Analysis, Font Metrics, and Distributed Citizen Science</div>
+    <p style="color: var(--accent-orange); font-style: italic;">"The penumbra is the partial shadow zone at the edge of darkness where light bleeds through."</p>
+    <div class="chain-info">
+        <div>Document: <span>penumbra-001-project-brief.html</span></div>
+        <div>Previous: <span>none (origin)</span></div>
+        <div>Next: <span>penumbra-002-conversation-raw.html</span></div>
+        <div>Session: <span>1</span></div>
+    </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- TABLE OF CONTENTS                                               -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<nav>
+
+  <nav id="sidebar" class="sidebar">
+
+    <h2>TABLE OF CONTENTS</h2>
+    <ol>
+        <li><a href="#exec-summary">Executive Summary</a></li>
+        <li><a href="#core-discovery">The Core Discovery</a>
+            <ol>
+                <li><a href="#anti-aliasing">Anti-Aliasing Artifacts Survive Redaction</a></li>
+                <li><a href="#font-rosetta">The Font: Your Rosetta Stone</a></li>
+                <li><a href="#width-constraint">Width Constraints as a Filter</a></li>
+                <li><a href="#info-theory">The Information Theory Argument</a></li>
+            </ol>
+        </li>
+        <li><a href="#three-bombshells">The Three Bombshells</a>
+            <ol>
+                <li><a href="#ocg-layers">OCG Layer Redactions (Toggleable)</a></li>
+                <li><a href="#text-layer">Intact Text Layers Under Bars</a></li>
+                <li><a href="#searchable">Searchable / Copy-Pasteable Hidden Text</a></li>
+            </ol>
+        </li>
+        <li><a href="#over-redaction">The Over-Redaction Attack</a>
+            <ol>
+                <li><a href="#redact-all">Automated "Redact All" Behavior</a></li>
+                <li><a href="#url-attack">The Partially Redacted URL / Path Attack</a></li>
+                <li><a href="#skeleton-key">The Search String as Skeleton Key</a></li>
+                <li><a href="#ics-anomaly">The .ics Calendar Path Anomaly</a></li>
+            </ol>
+        </li>
+        <li><a href="#data-landscape">The Data Landscape</a>
+            <ol>
+                <li><a href="#corpus-scale">3 Million PDFs</a></li>
+                <li><a href="#forensic-reports">Forensic Extraction Reports</a></li>
+                <li><a href="#multiple-redactors">Multiple Redactors, Multiple Methods</a></li>
+            </ol>
+        </li>
+        <li><a href="#statistics">Statistical Methodology</a>
+            <ol>
+                <li><a href="#bayes">Bayesian Framework</a></li>
+                <li><a href="#noise-model">The Noise Model</a></li>
+                <li><a href="#aggregation">Multi-Instance Aggregation</a></li>
+                <li><a href="#confidence">Confidence Scoring</a></li>
+                <li><a href="#validation">Validation Approach</a></li>
+            </ol>
+        </li>
+        <li><a href="#architecture">System Architecture</a>
+            <ol>
+                <li><a href="#distributed">Distributed Processing Model</a></li>
+                <li><a href="#phone-app">Phone App / PWA Design</a></li>
+                <li><a href="#work-queue">Work Queue &amp; Redundancy</a></li>
+                <li><a href="#database">Database Schema</a></li>
+            </ol>
+        </li>
+        <li><a href="#gamification">The Gamified Experience</a></li>
+        <li><a href="#implementation">Implementation — Full Code</a>
+            <ol>
+                <li><a href="#code-structures">Data Structures</a></li>
+                <li><a href="#code-parser">Core Parser Loop</a></li>
+                <li><a href="#code-bars">Bar Detection</a></li>
+                <li><a href="#code-edges">Edge Data Extraction</a></li>
+                <li><a href="#code-text">Text Layer Analysis</a></li>
+                <li><a href="#code-font">Font Calibration Engine</a></li>
+                <li><a href="#code-width">Width Filtering</a></li>
+                <li><a href="#code-matching">Edge Matching &amp; Scoring</a></li>
+                <li><a href="#code-viz">Visualiser &amp; Interactive Explorer</a></li>
+                <li><a href="#code-cluster">Cluster Analysis</a></li>
+                <li><a href="#code-notes">Critical Implementation Notes</a></li>
+            </ol>
+        </li>
+        <li><a href="#pipeline">Processing Pipeline &amp; Triage</a></li>
+        <li><a href="#roadmap">Project Roadmap</a></li>
+        <li><a href="#ethics">Ethics, Legal &amp; Responsible Disclosure</a></li>
+        <li><a href="#limitations">Known Limitations &amp; Failure Modes</a></li>
+        <li><a href="#prior-art">Prior Art &amp; References</a></li>
+        <li><a href="#llm-tips">Tips for Conversing with LLMs on Hidden Information Analysis</a></li>
+        <li><a href="#if-abandoned">If This Project Goes No Further</a></li>
+        <li><a href="#charlie-day">The Charlie Day Section</a></li>
+        <li><a href="#glossary">Glossary</a></li>
+    </ol>
+</nav>
+
+
+  <!-- Toggle Button -->
+  <button id="toggleBtn" class="toggle-btn" onclick="toggleSidebar()">☰</button>
+
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 1. EXECUTIVE SUMMARY                                            -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<section id="exec-summary">
+    <h2>1. Executive Summary</h2>
+
+    <div class="summary-box">
+        A publicly available corpus of approximately <strong>3 million PDFs</strong> contains redacted information hidden behind black rectangular bars. Analysis reveals that these redactions are fundamentally flawed across multiple dimensions. Some documents contain redactions implemented as toggleable PDF layers — reading the hidden text requires flipping a switch. Others retain the full text layer beneath visual black bars — the text can be copy-pasted out. For the remainder, where the text has been rasterised before the bar was applied, the anti-aliasing artifacts of the original text rendering survive at the bar margins as sub-pixel gradient data. Combined with font metric analysis, width constraints, and statistical aggregation across hundreds of identical redactions, these artifacts can be decoded to recover the hidden content with quantifiable confidence.
+    </div>
+
+    <p>The project proposes a <strong>distributed citizen science platform</strong> — a mobile app / PWA that allows volunteers to process individual PDFs on their phones. Each file is fetched, analysed in seconds, and a tiny structured JSON result is uploaded to a central database. The gamified interface lets users explore redactions with a contrast slider, revealing the hidden letter shapes that survive in the margins.</p>
+
+    <p>The approach has been <strong>independently validated by hand</strong> by domain experts who, working manually on a small number of documents, correctly identified redacted words with 99% accuracy. This project aims to automate and scale that methodology across millions of files.</p>
+
+    <div class="keynote">
+        The project does not aim to publish identified names or sensitive content. It aims to <strong>demonstrate a systemic vulnerability</strong> in institutional redaction practices and provide the statistical methodology for quantifying what survives behind "black" bars. Methods, not accusations. Statistics, not slander.
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 2. THE CORE DISCOVERY                                           -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<section id="core-discovery">
+    <h2>2. The Core Discovery</h2>
+
+    <h3 id="anti-aliasing">2.1 Anti-Aliasing Artifacts Survive Redaction</h3>
+
+    <div class="important">
+        This is the single most important insight in the entire project. Every other technique is secondary to this.
+    </div>
+
+    <p>The redaction pipeline the authors used was fatally flawed:</p>
+
+    <pre>TEXT DOCUMENT (vector/font data)
+        │
+        ▼
+   RASTERISE (text → bitmap pixels with anti-aliasing)
+        │
+        ▼
+   Anti-aliased bitmap with gray-gradient edges on every glyph
+        │
+        ▼
+   OVERLAY BLACK RECTANGLES on the bitmap
+        │
+        ▼
+   Save / embed in PDF</pre>
+
+    <p>When a text rasteriser renders a glyph, it produces <strong>sub-pixel coverage values</strong> — a gradient from the glyph body outward into the background. A character like 'A' has core body pixels at near full intensity, edge pixels at 20-60% coverage, and corner pixels at 5-10%. These gradients encode the <strong>exact shape of the letter edge</strong> at sub-pixel resolution — essentially a signed distance field sampled at pixel boundaries.</p>
+
+    <p>When the black bar is placed, it covers the letter body. But unless the bar's edges are perfectly aligned to the outermost extent of every anti-aliased pixel (essentially impossible), <strong>some gradient pixels survive at the bar margins</strong>.</p>
+
+    <h4>What Survives at Each Edge:</h4>
+    <table>
+        <tr><th>Edge</th><th>What's Visible</th><th>What It Reveals</th></tr>
+        <tr><td>Left margin</td><td>Leading edge gradient of first hidden character</td><td>Shape of the left side of the first letter</td></tr>
+        <tr><td>Right margin</td><td>Trailing edge gradient of last hidden character</td><td>Shape of the right side of the last letter</td></tr>
+        <tr><td>Top margin</td><td>Ascender tips (capitals, b, d, f, h, k, l, t)</td><td>Whether first/last characters have ascenders</td></tr>
+        <tr><td>Bottom margin</td><td>Descender tails (g, j, p, q, y)</td><td>Whether first/last characters have descenders</td></tr>
+    </table>
+
+    <h4>Additional Signal Sources:</h4>
+    <ul>
+        <li><strong>JPEG compression artifacts</strong>: JPEG operates on 8×8 pixel blocks. Blocks straddling the bar edge mix frequency information from covered and uncovered regions, creating structured residuals of ±1-3 pixel values <em>inside</em> the bar.</li>
+        <li><strong>Imperfect compositing</strong>: The bar may use near-black rather than pure #000000, or compositing may occur in gamma space rather than linear space, preventing true zeroing of the underlying data.</li>
+        <li><strong>Through-bar bleed</strong>: Even pixels fully inside the bar may retain faint structured information from the original text, recoverable through contrast enhancement.</li>
+    </ul>
+
+    <div class="thinking">
+        The initial conversation explored PDF forensics broadly — metadata, incremental updates, embedded files, JavaScript, etc. The user redirected focus to the anti-aliasing insight, noting it was "probably more important than all the above text." This was the pivotal moment in the conversation. Everything that followed builds on this foundation.
+    </div>
+
+    <h3 id="font-rosetta">2.2 The Font: Your Rosetta Stone</h3>
+
+    <p>The visible (unredacted) text in the same document is an extraordinary calibration resource. From it we extract:</p>
+
+    <h4>Exact Font Identification</h4>
+    <p>Glyph shape matching against font databases. Not just "Arial" but potentially which version, which renderer, which hinting engine. This can often be narrowed to a specific font file.</p>
+
+    <h4>Precise Metrics (Measured from Document)</h4>
+    <table>
+        <tr><th>Metric</th><th>What It Gives Us</th></tr>
+        <tr><td>Advance width per character</td><td>Exact pixel width each character occupies</td></tr>
+        <tr><td>Kerning pairs</td><td>Width adjustments for specific character pairs (e.g., "AV" is narrower)</td></tr>
+        <tr><td>Ascender/descender heights</td><td>Vertical extent of characters relative to baseline</td></tr>
+        <tr><td>Cap height / x-height</td><td>Height of capitals and lowercase body</td></tr>
+        <tr><td>Line spacing</td><td>Vertical distance between text lines</td></tr>
+        <tr><td>Inter-word spacing</td><td>Standard space character width</td></tr>
+    </table>
+
+    <h4>Rasterisation Engine Fingerprinting</h4>
+    <p>From visible text we reverse-engineer: DPI, anti-aliasing method (grayscale vs sub-pixel/ClearType), hinting mode, gamma curve, and sub-pixel positioning precision. Once calibrated, we can <strong>synthetically render any candidate word</strong> through the same pipeline and predict exactly what its pixel pattern would look like.</p>
+
+    <div class="keynote">
+        The calibration process is an <strong>inverse rendering problem</strong>: given the output pixels, recover the rendering parameters. We render the same characters from the identified font using different settings and find the parameters that produce the closest match to visible text. This is validated by predicting visible text pixel patterns and measuring the prediction error.
+    </div>
+
+    <h3 id="width-constraint">2.3 Width Constraints as a Filter</h3>
+
+    <p>The bar has a measurable pixel width. Each candidate word has a deterministic pixel width at the identified font and size. This is a <strong>hard constraint</strong>:</p>
+
+    <pre>Bar width (pixels) = Word width (pixels) + Left padding + Right padding</pre>
+
+    <p>Padding can be calibrated from the corpus (it's likely consistent because the redaction tool uses fixed margins). Width filtering alone typically eliminates <strong>60-80% of candidates</strong>.</p>
+
+    <p>For two-word redactions, the filtering is even more powerful: <code>word1 + space + word2</code> must match the bar width.</p>
+
+    <p><strong>Sub-pixel width discrimination</strong>: Because we calibrate to sub-pixel precision, two words that appear "about 180 pixels" at whole-pixel resolution may differ at 179.3 vs 180.1. The anti-aliased trailing edge encodes the sub-pixel position where the word ended — acting as a sub-pixel width measurement.</p>
+
+    <h3 id="info-theory">2.4 The Information Theory Argument</h3>
+
+    <div class="important">
+        This is why recovery is mathematically feasible, not just hopeful speculation.
+    </div>
+
+    <p>At each bar edge: approximately 3-5 pixel columns × 20-30 pixel rows of gradient values. Each pixel encodes ~4-6 bits of useful information. That gives us:</p>
+
+    <pre>Left edge:  4 columns × 25 rows × 5 bits = 500 bits
+Right edge: 4 columns × 25 rows × 5 bits = 500 bits
+Top edge:   0-200 bits (depends on character)
+Bottom edge: 0-200 bits
+Width:      ~10 bits of precision
+─────────────────────────────────────────────────────
+TOTAL AVAILABLE: ~1,000+ bits of edge information
+
+To distinguish 200 candidate words: log₂(200) ≈ 8 bits needed
+
+Even if 90% of bits are noise → 100 bits available → 12× what we need</pre>
+
+    <p>The information exists. The problem is extracting it from noise. With multiple instances, the noise averages out and the signal accumulates.</p>
+
+    <div class="keynote">
+        The constraint cascade compounds: 200 candidates → width filter → ~30 remain → first-character edge match → ~8 remain → last-character edge match → ~3 remain → ascender/descender pattern → ~1 remains → frequency prior → high-confidence answer.
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 3. THE THREE BOMBSHELLS                                         -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<section id="three-bombshells">
+    <h2>3. The Three Bombshells</h2>
+
+    <p>These were revealed mid-conversation by the user and fundamentally restructured the project's priority order.</p>
+
+    <h3 id="ocg-layers">3.1 Bombshell One: OCG Layer Redactions</h3>
+
+    <div class="important">
+        Some documents in the corpus have redactions implemented as Optional Content Groups — toggleable PDF layers. The hidden text is perfectly preserved underneath. Toggle the layer off, read the text.
+    </div>
+
+    <p>This is the digital equivalent of using a Post-It note instead of a permanent marker. The text objects are fully intact vectors. Every character, word, and sentence is perfectly preserved beneath a toggleable rectangle.</p>
+
+    <pre>Step 1: Open PDF
+Step 2: Enumerate OCGs (Optional Content Groups)
+Step 3: Set redaction layer visibility to OFF
+Step 4: Read the text underneath
+Step 5: There is no step 5</pre>
+
+    <p><strong>These documents should be processed first.</strong> They give confirmed ground truth for free, which then calibrates everything else.</p>
+
+    <h3 id="text-layer">3.2 Bombshell Two: Intact Text Layers</h3>
+
+    <p>The redaction tool drew black rectangles over the <strong>visual rendering</strong> but did not remove the underlying text objects from the PDF content stream. The text can be extracted programmatically.</p>
+
+    <pre>WHAT THE REDACTOR THINKS HAPPENED:
+    Text → [REDACTION TOOL] → Text removed, bar drawn
+
+WHAT ACTUALLY HAPPENED:
+    Text → [REDACTION TOOL] → Text still there, bar drawn ON TOP
+    
+    Select All → Copy → Paste reveals the hidden text</pre>
+
+    <div class="thinking">
+        This is the same failure mode that exposed Paul Manafort's redacted court filings and classified details in CIA documents. It has happened dozens of times in legal proceedings. The user confirmed this was discovered in their corpus.
+    </div>
+
+    <h3 id="searchable">3.3 Bombshell Three: Searchable Text</h3>
+
+    <p>The PDFs can be searched and text can be copy-pasted. This confirms that at least some documents retain their text layer. The user was able to paste forensic file path data directly from the PDFs.</p>
+
+    <div class="summary-box">
+        <strong>The Triage Priority This Creates:</strong><br><br>
+        <span class="tier-label tier-0">TIER 0</span> Layer-based redactions → toggle off → 100% confidence, seconds per file<br>
+        <span class="tier-label tier-0">TIER 1</span> Text-layer-intact → extract text stream → 100% confidence, seconds per file<br>
+        <span class="tier-label tier-1">TIER 2</span> Searchable/copy-paste → programmatic extraction → 100% confidence, minutes per file<br>
+        <span class="tier-label tier-2">TIER 3</span> Rasterised with overlay → pixel analysis → 60-95% confidence, automated<br>
+        <span class="tier-label tier-3">TIER 4</span> Properly rasterised → statistical analysis → 40-85% confidence, significant compute<br><br>
+        <strong>Tiers 0-2 may solve 50-80% of the corpus before any pixel analysis is needed.</strong>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 4. THE OVER-REDACTION ATTACK                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<section id="over-redaction">
+    <h2>4. The Over-Redaction Attack</h2>
+
+    <h3 id="redact-all">4.1 Automated "Redact All" Behavior</h3>
+
+    <p>The redactors didn't manually select each redaction. They typed a string into a search box and hit <strong>"Redact All"</strong>. The tool found every instance of the string and placed a bar — including instances where the string appeared as a <strong>substring</strong> of a longer word.</p>
+
+    <pre>Redactor searches for: "CARTER"
+Tool finds and bars every instance...
+
+  "...report submitted by ████████ on Tuesday..."     ← makes sense to redact
+  "...the ████████████ administration policy..."       ← WAIT. "CARTERIAN"?
+  "...delivered to ████████████ Naval Base..."          ← doesn't make sense</pre>
+
+    <p>Every nonsensical redaction is a cryptanalytic gift. It tells us the search string is a <strong>substring</strong> of the visible-context-expected word. The bar width tells us the full word width. The surrounding text tells us the semantic category. <strong>One confirmed over-redaction can unlock the search string, which unlocks every deliberate redaction of that string across the entire corpus.</strong></p>
+
+    <h3 id="url-attack">4.2 The Partially Redacted URL / Path Attack</h3>
+
+    <div class="important">
+        A partially redacted URL or file path is potentially <strong>more valuable than all pixel analysis combined</strong>. It places the search string inside a structurally constrained, parseable context with the visible prefix pointing directly at it.
+    </div>
+
+    <p>The user discovered that a few characters at the end of a long file path were redacted. The search string appeared as a substring within a Google Calendar file path (<code>@google.com.ics</code>). The tool doesn't understand URL semantics — it just blackens whatever matches.</p>
+
+    <h4>Why This Is Devastating:</h4>
+    <ul>
+        <li><strong>Structural framing</strong>: URLs and paths have syntax. The visible portion tells you the domain, path hierarchy, naming convention, and the semantic category of what follows.</li>
+        <li><strong>Precise character count</strong>: URLs often render in monospace fonts. <code>bar_width / char_width = exact character count</code>.</li>
+        <li><strong>Constrained character set</strong>: URL paths are limited to <code>a-z, 0-9, -, _, .</code> — vastly fewer possibilities than arbitrary text.</li>
+        <li><strong>The URL may still exist</strong>: Wayback Machine, search engine caches, directory listings, and other documents in the corpus may reference the same URL in full.</li>
+        <li><strong>Confirms the attack model</strong>: No human would selectively redact 3 characters at the end of a URL. Only an automated substring matcher would do this.</li>
+    </ul>
+
+    <h4>The Kill Chain:</h4>
+    <pre>Find partially redacted URL/path
+    → Parse visible structure
+    → Measure bar → exact character count
+    → Constrain character set
+    → Check candidate word list
+    → Edge pixel analysis narrows further
+    → Cross-reference with bar width clusters in prose
+    → CONFIRMED: search string identified
+    → Every bar matching that width = SOLVED
+    → Calibration data improves matching for remaining bars
+    → CASCADE through remaining clusters</pre>
+
+    <h3 id="skeleton-key">4.3 The Search String as Skeleton Key</h3>
+
+    <p>The over-redaction attack also reveals <strong>tool behavior metadata</strong>:</p>
+
+    <table>
+        <tr><th>Observable</th><th>Inference</th></tr>
+        <tr><td>Bar starts/ends at word boundaries</td><td>Tool uses whole-word matching</td></tr>
+        <tr><td>Bar starts/ends mid-word</td><td>Tool uses substring matching</td></tr>
+        <tr><td>URL lowercase + prose uppercase both hit</td><td>Case-insensitive matching</td></tr>
+        <tr><td>Only exact string barred</td><td>Literal string matching</td></tr>
+        <tr><td>Variants also barred (plurals, possessives)</td><td>Stemming or regex used</td></tr>
+    </table>
+
+    <h3 id="ics-anomaly">4.4 The .ics Calendar Path Anomaly</h3>
+
+    <p>The user showed a forensic extraction path from an AFF4 container:</p>
+
+    <pre>/Users/[username]/Library/Calendars/[UUID].caldav/[UUID].calendar/
+    Events/7o64gs00t6Ohm085oibpsu4tqg@googleco████</pre>
+
+    <p>The full filename should be <code>...@google.com.ics</code>. Only 3-4 characters at the end were redacted. The <code>.ics</code> extension appears 98 times in total across the documents, and <code>googleco</code> appears 2 more times.</p>
+
+    <p>Possible explanations: substring collision in the event ID or path, tool bug with line-break coordinate mapping, or a misclick (though the bar was clearly placed over the characters). The other 97 <code>.ics</code> instances and whether they're redacted will reveal the true pattern.</p>
+
+    <div class="thinking">
+        The user mentioned only one other redaction in the 19-page document, which appeared to be manually placed with several partially visible letters (an 's' was "crystal clear"). This suggests multiple redaction passes by different people with different criteria and methods — a common pattern that creates exploitable inconsistencies.
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 5. THE DATA LANDSCAPE                                           -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<section id="data-landscape">
+    <h2>5. The Data Landscape</h2>
+
+    <h3 id="corpus-scale">5.1 Three Million PDFs</h3>
+
+    <p>The corpus is approximately <strong>3 million PDF files</strong> hosted on a public website with adequate bandwidth. Available as individual files and in 2GB+ zip archives.</p>
+
+    <h4>Estimated Composition:</h4>
+    <table>
+        <tr><th>Type</th><th>Estimated %</th><th>Relevance</th></tr>
+        <tr><td>Single-page scanned emails</td><td>~majority</td><td>HIGH — primary analysis targets</td></tr>
+        <tr><td>Photos / images</td><td>~significant</td><td>LOW — outside current scope</td></tr>
+        <tr><td>Renamed video files</td><td>~small</td><td>NONE — skip</td></tr>
+        <tr><td>Multi-page forensic reports</td><td>~small</td><td>HIGH — structured data extraction</td></tr>
+        <tr><td>Fully clear (no redactions)</td><td>~large</td><td>CATALOG — may contain contextual value</td></tr>
+    </table>
+
+    <h3 id="forensic-reports">5.2 Forensic Extraction Reports</h3>
+
+    <p>Some documents are forensic tool output (Cellebrite, Axiom, X-Ways style) from AFF4 container extractions of a Mac. These contain structured tabular data: calendar events, file listings, and potentially email extractions, browser history, and chat logs.</p>
+
+    <p>One examined document contained 3,563 calendar entries paginated across pages with columns: Date, Duration, Summary, Location, Time Zone, Calendar URL. The travel itinerary was partially visible (airport codes, flight numbers, timezone transitions) even where Summary and Location fields were redacted.</p>
+
+    <div class="keynote">
+        <strong>Timezone data is never redacted.</strong> The redactor searched for names and places, not timezone strings. But <code>America/New_York</code> vs <code>Europe/Paris</code> vs <code>Europe/Moscow</code> is a real-time location tracker. Across 3,563 entries, a complete movement timeline can be reconstructed without breaking a single redaction.
+    </div>
+
+    <h3 id="multiple-redactors">5.3 Multiple Redactors, Multiple Methods</h3>
+
+    <p>Analysis reveals at least 3-4 distinct redaction approaches used across the corpus:</p>
+
+    <table>
+        <tr><th>Profile</th><th>Method</th><th>Quality</th><th>Exploitability</th></tr>
+        <tr><td>Redactor A</td><td>Automated search-and-redact</td><td>Machine-precise bars, consistent placement</td><td>Over-redaction attack, width clustering</td></tr>
+        <tr><td>Redactor B</td><td>Manual bar placement</td><td>Sloppy — letters partially visible</td><td>Direct visual recovery</td></tr>
+        <tr><td>Redactor C</td><td>PDF layer/annotation</td><td>Toggleable OCG layers</td><td>Trivial — toggle off</td></tr>
+        <tr><td>Redactor D</td><td>Double redaction</td><td>Second pass over existing redactions</td><td>May create alignment mismatches</td></tr>
+    </table>
+
+    <p>Some documents have been double-redacted (possibly to correct earlier mistakes). The inconsistency is itself exploitable — if they'd properly redacted EVERY document the same way, the task would be harder.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 6. STATISTICAL METHODOLOGY                                      -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<section id="statistics">
+    <h2>6. Statistical Methodology</h2>
+
+    <div class="important">
+        "Rock solid statistical analysis" was specified as non-negotiable. Without rigorous methodology, the project is speculation with a slider widget.
+    </div>
+
+    <h3 id="bayes">6.1 Bayesian Framework</h3>
+
+    <pre>Given:
+  O = observed edge pixel values at a bar margin
+  C = {c₁, c₂, ..., cₙ} = set of candidate characters/words
+  F = calibrated font rendering function
+
+For each candidate cᵢ:
+  P(cᵢ | O) = P(O | cᵢ) · P(cᵢ) / P(O)
+
+Where:
+  P(O | cᵢ) = likelihood of seeing these pixel values if character were cᵢ
+              → computed from pixel comparison + noise model
+  P(cᵢ)     = prior probability of character cᵢ
+              → from frequency in candidate word list, positional frequency
+  P(O)       = normalising constant (sum over all candidates)</pre>
+
+    <h3 id="noise-model">6.2 The Noise Model</h3>
+
+    <p>Three noise sources must be quantified:</p>
+
+    <ol>
+        <li><strong>Measurement noise</strong>: JPEG quantisation (±1-3 values), rasterisation variation, bar placement variation, scanner artifacts. Quantified by measuring variance across known-identical characters in visible text.</li>
+        <li><strong>Model uncertainty</strong>: Font identification confidence, rendering parameter estimation, bar padding estimation. Quantified by measuring prediction error on visible text.</li>
+        <li><strong>Systematic bias</strong>: Rendering engine differences, gamma/color space mismatches. Quantified by calibration residuals.</li>
+    </ol>
+
+    <pre>σ²_total = σ²_jpeg + σ²_raster + σ²_placement + σ²_model
+
+P(O | cᵢ) = exp(-||O - P(cᵢ)||² / 2σ²_total)
+(Gaussian likelihood given the noise model)</pre>
+
+    <h3 id="aggregation">6.3 Multi-Instance Aggregation</h3>
+
+    <p>When the same word is redacted N times across the corpus:</p>
+
+    <pre>P(cᵢ | O₁, O₂, ..., Oₙ) ∝ P(cᵢ) · ∏ₖ P(Oₖ | cᵢ)</pre>
+
+    <p><strong>Critical caveat</strong>: Instances are NOT fully independent. Many share the same document (same rendering params), same page position (same JPEG blocks). Must account for correlations:</p>
+    <ul>
+        <li>Group instances by document</li>
+        <li>Within each document: take the best instance</li>
+        <li>Across documents: multiply likelihoods (independent rendering conditions)</li>
+        <li>Report <strong>effective sample size</strong>, not raw count</li>
+    </ul>
+
+    <h3 id="confidence">6.4 Confidence Scoring</h3>
+
+    <p>Three things are reported for every analysis:</p>
+
+    <table>
+        <tr><th>Level</th><th>Threshold</th><th>Interpretation</th></tr>
+        <tr><td>SPECULATIVE</td><td>&lt; 50%</td><td>"Could be A or B or C"</td></tr>
+        <tr><td>SUGGESTIVE</td><td>50-75%</td><td>"Probably A, possibly B"</td></tr>
+        <tr><td>CONFIDENT</td><td>75-90%</td><td>"Very likely A"</td></tr>
+        <tr><td>STRONG</td><td>90-99%</td><td>"Almost certainly A"</td></tr>
+        <tr><td>DEFINITIVE</td><td>&gt; 99%</td><td>"Confirmed A" (requires ground truth)</td></tr>
+    </table>
+
+    <p>We <strong>never</strong> say "this IS definitely X" unless we have ground truth (text layer intact, layer toggle, etc.).</p>
+
+    <h3 id="validation">6.5 Validation Approach</h3>
+
+    <p>The method validates itself through the Tier 0-2 documents that are trivially solvable:</p>
+
+    <pre>VALIDATION METHOD:
+1. Solve Tier 0-2 documents (layer toggle, text extraction) → known answers
+2. PRETEND we don't know the answers
+3. Run the pixel analysis on these documents
+4. Compare pixel analysis predictions to known answers
+5. Report: precision, recall, calibration curves
+
+TARGET: "At the 90% confidence threshold:
+  - 94% of predictions correct (precision)
+  - 78% of redactions solvable (recall)
+  - Confidence scores well-calibrated
+    (90% predictions correct 91% of the time)"</pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 7. SYSTEM ARCHITECTURE                                          -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<section id="architecture">
+    <h2>7. System Architecture</h2>
+
+    <h3 id="distributed">7.1 Distributed Processing Model</h3>
+
+    <pre>┌─────────────────────────────────┐
+│        PUBLIC SOURCE            │
+│    (3M PDFs, web server)        │
+└───────────────┬─────────────────┘
+                │ HTTP GET (one PDF)
+                ▼
+┌─────────────────────────────────┐
+│          PHONE APP              │
+│  FETCH → PARSE → SCAN → UPLOAD │
+│  Progress: ███░░░░░  0.03%     │
+└───────────────┬─────────────────┘
+                │ HTTPS POST (tiny JSON ~1-5KB)
+                ▼
+┌─────────────────────────────────┐
+│     CENTRAL COORDINATION        │
+│  Work Queue │ Results DB │ Dash │
+└─────────────────────────────────┘</pre>
+
+    <p>The math: 3M files × 2-10 seconds per file = ~10,000-30,000 phone-hours. 1,000 volunteers overnight = done in a week.</p>
+
+    <h3 id="phone-app">7.2 Phone App / PWA Design</h3>
+
+    <p>The phone never stores the PDF. Pull, process, discard. The result is 1-5KB of JSON. Total results database for 3M files: ~3-15GB.</p>
+
+    <h4>Platform Strategy:</h4>
+    <p><strong>PWA first</strong> (fastest to ship, no app store approval needed, works on any device), <strong>native app later</strong> (better battery management, background processing). Validate the concept with the PWA, build native once there's community momentum.</p>
+
+    <h4>Processing Stack on Phone:</h4>
+    <ul>
+        <li><strong>PDF parsing</strong>: pdf.js — battle-tested JavaScript library</li>
+        <li><strong>Image analysis</strong>: Canvas API for pixel access</li>
+        <li><strong>Bar detection</strong>: Pure algorithm (threshold + connected components), no ML needed</li>
+        <li><strong>Heavy analysis</strong> (template matching, cross-document correlation): runs on central server, NOT on phone</li>
+    </ul>
+
+    <h3 id="work-queue">7.3 Work Queue &amp; Redundancy</h3>
+
+    <pre>Central server maintains:
+├── PENDING:    [file_ids not yet claimed]     → starts at 3M
+├── CLAIMED:    [file_id → device, timestamp]  → expires after 10min
+├── COMPLETED:  [file_id → result]             → grows
+├── FAILED:     [file_id → error]              → retry queue
+
+VERIFICATION: Every file processed by AT LEAST 2 independent devices.
+If both agree: accepted. If disagree: queued for 3rd.
+Cost: 2× processing (6M work units), but compute is free (donated).</pre>
+
+    <h3 id="database">7.4 Database Schema</h3>
+
+    <details>
+        <summary>Full Database Schema (Click to expand)</summary>
+        <div class="detail-content">
+<pre>DOCUMENTS
+──────────
+doc_id              PK, auto-increment
+filename            original filename
+sha256              file hash
+file_size           bytes
+page_count          int
+pdf_author          text
+pdf_producer        text
+pdf_creator         text
+creation_date       timestamp
+mod_date            timestamp
+redaction_tier      enum: 0-4
+text_layer_intact   boolean
+has_ocg_redactions  boolean
+text_extractable    boolean
+doc_type            enum: email/report/photo/forensic/other
+calibration_id      FK → CALIBRATIONS
+
+CALIBRATIONS
+────────────
+cal_id              PK
+doc_id              FK → DOCUMENTS
+font_family         varchar
+font_weight         varchar
+font_confidence     float 0.0-1.0
+effective_dpi       float
+aa_type             enum: none/grayscale/subpixel
+hinting_mode        enum: full/light/none
+gamma               float
+space_width_px      float
+cap_height_px       float
+x_height_px         float
+bar_color           hex string
+bar_padding_px      float
+char_widths_json    JSON
+kerning_pairs_json  JSON
+validation_error    float
+
+REDACTIONS
+──────────
+redaction_id        PK, auto-increment
+doc_id              FK → DOCUMENTS
+page_number         int
+bar_x               float (sub-pixel)
+bar_y               float (sub-pixel)
+bar_width_px        float (sub-pixel)
+bar_height_px       float (sub-pixel)
+baseline_y          float
+text_before         varchar
+text_after          varchar
+full_sentence       text
+tier                enum: 0-4
+extracted_text      varchar (if tier 0-2)
+extraction_method   enum: layer_toggle/text_stream/copy_paste/pixel/over_redaction
+extraction_conf     float 0.0-1.0
+grammatical_role    enum: proper_noun/noun/verb/adj/other/unknown
+semantic_category   enum: person/place/org/date/other/unknown
+is_over_redaction   boolean
+estimated_chars     int range (min-max)
+estimated_words     int
+cluster_id          FK → CLUSTERS
+context_image_path  path
+edge_data_path      path
+redactor_profile    enum: A/B/C/D/unknown
+search_string_id    FK → SEARCH_STRINGS
+
+CLUSTERS
+────────
+cluster_id          PK
+representative_width float
+estimated_search_str varchar
+search_str_conf     float 0.0-1.0
+member_count        int
+confirmed_word      varchar (if solved)
+confirmed_conf      float
+
+SEARCH_STRINGS
+──────────────
+search_id           PK
+search_string       varchar
+discovery_method    enum
+case_sensitive      boolean
+whole_word          boolean
+confirmed           boolean
+total_matches       int
+intentional_matches int
+over_matches        int
+
+MATCH_SCORES
+────────────
+redaction_id        FK → REDACTIONS
+candidate_word      varchar
+width_score         float
+left_edge_score     float
+right_edge_score    float
+top_edge_score      float
+bottom_edge_score   float
+combined_score      float
+probability         float
+rank                int
+
+CALENDAR_ENTRIES (for forensic report data)
+────────────────
+entry_id            PK
+doc_id              FK → DOCUMENTS
+date_utc            timestamp
+duration_minutes    int
+summary_visible     text
+summary_redacted    boolean
+location_visible    text
+location_redacted   boolean
+timezone            varchar
+flight_number       varchar (if detected)
+airport_code        varchar (if detected)
+inferred_city       varchar
+entry_type          enum: meeting/flight/reminder/event/unknown</pre>
+        </div>
+    </details>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 8. THE GAMIFIED EXPERIENCE                                      -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<section id="gamification">
+    <h2>8. The Gamified Experience</h2>
+
+    <p>Users don't just process files — they <strong>explore</strong> redactions. The app shows the filename, surrounding text context, and then lets the user interact:</p>
+
+    <h3>The Contrast Slider</h3>
+    <p>User drags a slider from 0% (raw image — solid black bar) through progressive enhancement levels until letter shapes emerge in the margins. The "aha moment" when shapes appear in what looked like solid black is the hook that gets people to share and recruit.</p>
+
+    <h3>Letter Probability View</h3>
+    <p>Tap a character position within the bar to see a zoomed view of that character's edge pixels and a probability distribution bar chart: "J: 87%, I: 8%, T: 3%..." with an explanation of <em>why</em> (ascender pattern, width match, etc.).</p>
+
+    <h3>Cluster Overview</h3>
+    <p>Shows the full word with per-character confidence: a row of boxes, each containing the best-guess letter and its confidence percentage. Tap any to drill down. Below: the top candidate words ranked by combined probability.</p>
+
+    <h3>Dashboard &amp; Leaderboard</h3>
+    <pre>FILES PROCESSED: 124,891 / 3,000,000  ████░░░░░░ 4.2%
+ACTIVE DEVICES: 312
+REDACTED FILES FOUND: 23,447
+UNIQUE WIDTH CLUSTERS: 47
+ANOMALIES FLAGGED: 312
+CONTRIBUTORS: 1,247
+
+LATEST DISCOVERY:
+"Cluster #23 resolved: edge analysis across 423 instances
+ confirms [RESULT] with 97.3% confidence"</pre>
+
+    <div class="keynote">
+        Nobody is slandered. The app shows probabilities, not assertions. The methodology is transparent. The statistics are auditable. Users see the <em>process</em> of discovery, not pre-baked conclusions.
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 9. IMPLEMENTATION — FULL CODE                                   -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<section id="implementation">
+    <h2>9. Implementation — Full Code</h2>
+
+    <p>Complete working Python implementation. Dependencies: <code>pip install pymupdf opencv-python numpy pillow matplotlib</code></p>
+
+    <h3 id="code-structures">9.1 Data Structures</h3>
+
+    <details>
+        <summary>Core Data Structures (BarDetection, DocumentResult)</summary>
+        <div class="detail-content">
+<pre><code>from dataclasses import dataclass, field
+from typing import Optional
+import numpy as np
+
+@dataclass
+class BarDetection:
+    """One detected redaction bar"""
+    x: float              # left edge, pixels
+    y: float              # top edge, pixels
+    w: float              # width, pixels
+    h: float              # height, pixels
+    page: int             # page number
+
+    # Edge pixel data — the forensic gold
+    edge_left: Optional[np.ndarray] = None    # shape: (h, margin_px)
+    edge_right: Optional[np.ndarray] = None
+    edge_top: Optional[np.ndarray] = None     # shape: (margin_px, w)
+    edge_bottom: Optional[np.ndarray] = None
+
+    # Bar interior pixel statistics
+    bar_mean_value: float = 0.0
+    bar_max_value: float = 0.0
+    bar_std_value: float = 0.0
+
+    # Context
+    text_before: str = ""
+    text_after: str = ""
+    text_under: Optional[str] = None
+    context_category: str = "unknown"
+
+    # Baseline and font info from adjacent text
+    baseline_y: Optional[float] = None
+    estimated_font_size: Optional[float] = None
+    estimated_char_count: Optional[tuple] = None
+
+
+@dataclass
+class DocumentResult:
+    """Complete analysis result for one PDF"""
+    file_path: str
+    file_hash: str
+    file_size: int
+
+    page_count: int = 0
+    doc_type: str = "unknown"
+    has_text_layer: bool = False
+    has_redactions: bool = False
+    has_text_under_bars: bool = False
+    has_ocg_layers: bool = False
+
+    image_format: str = ""
+    image_width: int = 0
+    image_height: int = 0
+    image_dpi: float = 0.0
+
+    full_text: str = ""
+    bars: list = field(default_factory=list)
+
+    char_widths: dict = field(default_factory=dict)
+    font_name: str = ""
+
+    anomalies: list = field(default_factory=list)
+    processing_time_ms: float = 0.0
+    error: Optional[str] = None</code></pre>
+        </div>
+    </details>
+
+    <h3 id="code-parser">9.2 Core Parser Loop</h3>
+
+    <details>
+        <summary>process_pdf() — Main Entry Point (~80 lines)</summary>
+        <div class="detail-content">
+<pre><code>import fitz  # PyMuPDF
+import cv2
+import numpy as np
+import hashlib
+import time
+import json
+from pathlib import Path
+
+# Configuration
+BAR_THRESHOLD = 10        # pixels below this = "black"
+BAR_MIN_WIDTH = 30        # minimum bar width in pixels
+BAR_MIN_HEIGHT = 8        # minimum bar height
+BAR_MAX_HEIGHT = 100      # maximum single-line bar height
+BAR_MIN_ASPECT = 2.0      # width/height minimum ratio
+EDGE_MARGIN = 10          # pixels of margin to extract around bar
+MIN_RECTANGULARITY = 0.90 # how rectangular must a candidate be
+
+def process_pdf(file_path: str) -&gt; DocumentResult:
+    """Main entry point. Process one PDF and return structured results."""
+    start = time.time()
+    result = DocumentResult(
+        file_path=file_path,
+        file_hash=hash_file(file_path),
+        file_size=Path(file_path).stat().st_size,
+    )
+    try:
+        doc = fitz.open(file_path)
+        result.page_count = len(doc)
+        if result.page_count == 0:
+            result.doc_type = "empty"
+            return result
+
+        result.has_ocg_layers = check_ocg_layers(doc)
+        full_text, text_blocks = extract_text_layer(doc)
+        result.full_text = full_text
+        result.has_text_layer = len(full_text.strip()) &gt; 20
+
+        for page_num in range(result.page_count):
+            page = doc[page_num]
+            img, img_format, dpi = extract_page_image(doc, page, page_num)
+            if img is None:
+                continue
+            if page_num == 0:
+                result.image_format = img_format
+                result.image_height, result.image_width = img.shape[:2]
+                result.image_dpi = dpi
+
+            bars = detect_bars(img)
+            if bars:
+                result.has_redactions = True
+                page_text_blocks = text_blocks.get(page_num, [])
+                for bar in bars:
+                    bar.page = page_num
+                    extract_edge_data(img, bar)
+                    extract_bar_interior(img, bar)
+                    find_text_context(bar, page_text_blocks)
+                    text_under = check_text_under_bar(bar, page_text_blocks)
+                    if text_under:
+                        bar.text_under = text_under
+                        result.has_text_under_bars = True
+                    estimate_char_count(bar, page_text_blocks)
+                    result.bars.append(bar)
+
+        if result.has_text_layer and result.has_redactions:
+            result.char_widths, result.font_name = extract_font_metrics(
+                doc, text_blocks)
+        result.doc_type = classify_document(result)
+        doc.close()
+    except Exception as e:
+        result.error = str(e)
+    result.processing_time_ms = (time.time() - start) * 1000
+    return result
+
+def hash_file(path: str) -&gt; str:
+    h = hashlib.sha256()
+    with open(path, 'rb') as f:
+        for chunk in iter(lambda: f.read(8192), b''):
+            h.update(chunk)
+    return h.hexdigest()</code></pre>
+        </div>
+    </details>
+
+    <h3 id="code-bars">9.3 Bar Detection</h3>
+
+    <details>
+        <summary>detect_bars() — Find Black Rectangular Bars</summary>
+        <div class="detail-content">
+<pre><code>def detect_bars(img: np.ndarray) -&gt; list:
+    """
+    Find black rectangular bars in a grayscale image.
+    Strategy: threshold dark pixels, find connected components,
+    filter by shape (rectangular, right aspect ratio, right size).
+    """
+    mask = (img &lt; BAR_THRESHOLD).astype(np.uint8) * 255
+
+    # Morphological close to fill tiny gaps within bars
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 1))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+
+    contours, _ = cv2.findContours(
+        mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    bars = []
+    for contour in contours:
+        x, y, w, h = cv2.boundingRect(contour)
+
+        if w &lt; BAR_MIN_WIDTH or h &lt; BAR_MIN_HEIGHT:
+            continue
+        if h &gt; BAR_MAX_HEIGHT:
+            continue
+        if w / max(h, 1) &lt; BAR_MIN_ASPECT:
+            continue
+
+        area = cv2.contourArea(contour)
+        rect_area = w * h
+        rectangularity = area / max(rect_area, 1)
+        if rectangularity &lt; MIN_RECTANGULARITY:
+            continue
+
+        interior = img[y+2:y+h-2, x+2:x+w-2]
+        if interior.size == 0:
+            continue
+        if interior.mean() &gt; BAR_THRESHOLD * 2:
+            continue
+
+        bars.append(BarDetection(
+            x=float(x), y=float(y),
+            w=float(w), h=float(h), page=0))
+
+    bars.sort(key=lambda b: (b.y, b.x))
+    return bars</code></pre>
+        </div>
+    </details>
+
+    <h3 id="code-edges">9.4 Edge Data Extraction</h3>
+
+    <details>
+        <summary>extract_edge_data() &amp; extract_bar_interior() — The Forensic Core</summary>
+        <div class="detail-content">
+<pre><code>def extract_edge_data(img: np.ndarray, bar: BarDetection):
+    """
+    Extract pixel data at each edge of the bar.
+    This is where the hidden letter shapes live.
+    The gradient values encode anti-aliased character edges.
+    """
+    h_img, w_img = img.shape[:2]
+    x, y, w, h = int(bar.x), int(bar.y), int(bar.w), int(bar.h)
+    m = EDGE_MARGIN
+
+    # LEFT EDGE
+    x_start, x_end = max(0, x - m), min(w_img, x + m)
+    y_start, y_end = max(0, y), min(h_img, y + h)
+    if x_end &gt; x_start and y_end &gt; y_start:
+        bar.edge_left = img[y_start:y_end, x_start:x_end].astype(np.float32)
+
+    # RIGHT EDGE
+    x_start, x_end = max(0, x + w - m), min(w_img, x + w + m)
+    if x_end &gt; x_start and y_end &gt; y_start:
+        bar.edge_right = img[y_start:y_end, x_start:x_end].astype(np.float32)
+
+    # TOP EDGE
+    x_start, x_end = max(0, x), min(w_img, x + w)
+    y_start, y_end = max(0, y - m), min(h_img, y + m)
+    if x_end &gt; x_start and y_end &gt; y_start:
+        bar.edge_top = img[y_start:y_end, x_start:x_end].astype(np.float32)
+
+    # BOTTOM EDGE
+    y_start, y_end = max(0, y + h - m), min(h_img, y + h + m)
+    if x_end &gt; x_start and y_end &gt; y_start:
+        bar.edge_bottom = img[y_start:y_end, x_start:x_end].astype(np.float32)
+
+
+def extract_bar_interior(img: np.ndarray, bar: BarDetection):
+    """Analyse pixels INSIDE the bar. Non-zero values = signal."""
+    x, y, w, h = int(bar.x), int(bar.y), int(bar.w), int(bar.h)
+    interior = img[y+2:y+h-2, x+2:x+w-2]
+    if interior.size == 0:
+        return
+    bar.bar_mean_value = float(interior.mean())
+    bar.bar_max_value = float(interior.max())
+    bar.bar_std_value = float(interior.std())</code></pre>
+        </div>
+    </details>
+
+    <h3 id="code-text">9.5 Text Layer Analysis</h3>
+
+    <details>
+        <summary>Text extraction, text-under-bar detection, context extraction, character count estimation</summary>
+        <div class="detail-content">
+<pre><code>def extract_text_layer(doc) -&gt; tuple:
+    """Extract all text with position data from the PDF."""
+    full_text = ""
+    blocks_by_page = {}
+    for page_num, page in enumerate(doc):
+        page_dict = page.get_text("dict", flags=fitz.TEXT_PRESERVE_WHITESPACE)
+        page_blocks = []
+        for block in page_dict.get("blocks", []):
+            if block.get("type") != 0:
+                continue
+            for line in block.get("lines", []):
+                for span in line.get("spans", []):
+                    text = span.get("text", "").strip()
+                    if not text:
+                        continue
+                    bbox = span.get("bbox", (0, 0, 0, 0))
+                    page_blocks.append({
+                        "text": text,
+                        "x0": bbox[0], "y0": bbox[1],
+                        "x1": bbox[2], "y1": bbox[3],
+                        "font": span.get("font", ""),
+                        "size": span.get("size", 0),
+                        "color": span.get("color", 0),
+                        "flags": span.get("flags", 0),
+                    })
+                    full_text += text + " "
+        blocks_by_page[page_num] = page_blocks
+    return full_text, blocks_by_page
+
+
+def check_text_under_bar(bar: BarDetection, text_blocks: list):
+    """Check if text blocks fall within bar's bounding box. If so: BROKEN."""
+    hidden_text = []
+    for block in text_blocks:
+        h_overlap = (block["x0"] &lt; bar.x + bar.w and block["x1"] &gt; bar.x)
+        v_overlap = (block["y0"] &lt; bar.y + bar.h and block["y1"] &gt; bar.y)
+        if h_overlap and v_overlap:
+            hidden_text.append(block["text"])
+    return " ".join(hidden_text) if hidden_text else None
+
+
+def find_text_context(bar: BarDetection, text_blocks: list):
+    """Find visible text immediately before and after the bar."""
+    same_line = [b for b in text_blocks
+                 if abs(b["y0"] - bar.y) &lt; bar.h * 1.5]
+    same_line.sort(key=lambda b: b["x0"])
+    before = [b["text"] for b in same_line if b["x1"] &lt; bar.x + 5]
+    bar.text_before = " ".join(before[-5:])
+    after = [b["text"] for b in same_line if b["x0"] &gt; bar.x + bar.w - 5]
+    bar.text_after = " ".join(after[:5])
+    adjacent = [b for b in same_line
+                if b["x1"] &lt; bar.x or b["x0"] &gt; bar.x + bar.w]
+    if adjacent:
+        bar.baseline_y = np.mean([b["y1"] for b in adjacent])
+        sizes = [b["size"] for b in adjacent if b["size"] &gt; 0]
+        if sizes:
+            bar.estimated_font_size = np.median(sizes)
+
+
+def estimate_char_count(bar: BarDetection, text_blocks: list):
+    """Estimate hidden character count from average char width."""
+    same_line = [b for b in text_blocks
+                 if abs(b["y0"] - bar.y) &lt; bar.h * 1.5
+                 and (b["x1"] &lt; bar.x or b["x0"] &gt; bar.x + bar.w)]
+    char_widths = []
+    for block in same_line:
+        text = block["text"]
+        if len(text) &gt; 0:
+            block_width = block["x1"] - block["x0"]
+            char_widths.append(block_width / len(text))
+    if char_widths:
+        avg_cw = np.mean(char_widths)
+        if avg_cw &gt; 0:
+            effective_width = bar.w * 0.9
+            min_chars = int(effective_width / (avg_cw * 1.2))
+            max_chars = int(effective_width / (avg_cw * 0.8))
+            bar.estimated_char_count = (max(1, min_chars), max_chars)</code></pre>
+        </div>
+    </details>
+
+    <h3 id="code-font">9.6 Font Calibration Engine</h3>
+
+    <details>
+        <summary>FontCalibrator class — Identify font, measure metrics, render synthetic words</summary>
+        <div class="detail-content">
+<pre><code>from PIL import Image, ImageDraw, ImageFont
+
+class FontCalibrator:
+    """Identifies the document font and builds a rendering model."""
+
+    def __init__(self):
+        self.font_path = None
+        self.font_size_px = None
+        self.dpi = None
+        self.char_widths = {}
+        self.rendered_widths = {}
+        self.calibration_error = None
+
+    def calibrate_from_document(self, result: DocumentResult,
+                                 font_dir: str = "/usr/share/fonts"):
+        """Use visible text measurements to identify font and parameters."""
+        if not result.char_widths:
+            raise ValueError("No character width data")
+        self.dpi = result.image_dpi
+        self.char_widths = result.char_widths
+
+        best_font, best_error = None, float('inf')
+        for font_path in self._find_candidate_fonts(font_dir):
+            for size in range(6, 20):
+                error = self._measure_font_match(font_path, size)
+                if error &lt; best_error:
+                    best_error = error
+                    best_font = font_path
+                    self.font_size_px = size
+        if best_font:
+            self.font_path = best_font
+            self.calibration_error = best_error
+            self._build_rendered_widths()
+        return self
+
+    def calibrate_manual(self, font_path: str, font_size_px: int, dpi: float):
+        """Manual calibration when font is already identified."""
+        self.font_path = font_path
+        self.font_size_px = font_size_px
+        self.dpi = dpi
+        self._build_rendered_widths()
+        return self
+
+    def _find_candidate_fonts(self, font_dir: str) -&gt; list:
+        font_dir = Path(font_dir)
+        fonts = []
+        for ext in ['*.ttf', '*.otf', '*.TTF', '*.OTF']:
+            fonts.extend(font_dir.rglob(ext))
+        return [str(f) for f in fonts]
+
+    def _measure_font_match(self, font_path: str, size: int) -&gt; float:
+        try:
+            font = ImageFont.truetype(font_path, size)
+        except Exception:
+            return float('inf')
+        errors = []
+        for char, measured_width in self.char_widths.items():
+            if len(char) != 1:
+                continue
+            try:
+                bbox = font.getbbox(char)
+                rendered_width = bbox[2] - bbox[0]
+                measured_px = measured_width * (self.dpi / 72.0)
+                errors.append((rendered_width - measured_px) ** 2)
+            except Exception:
+                continue
+        return np.mean(errors) if errors else float('inf')
+
+    def _build_rendered_widths(self):
+        if not self.font_path:
+            return
+        font = ImageFont.truetype(self.font_path, self.font_size_px)
+        charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-_@/ "
+        for char in charset:
+            try:
+                bbox = font.getbbox(char)
+                self.rendered_widths[char] = bbox[2] - bbox[0]
+            except Exception:
+                pass
+
+    def render_word(self, word: str) -&gt; np.ndarray:
+        """Render a word using the calibrated font. Returns grayscale numpy array."""
+        font = ImageFont.truetype(self.font_path, self.font_size_px)
+        bbox = font.getbbox(word)
+        text_w = bbox[2] - bbox[0] + 20
+        text_h = bbox[3] - bbox[1] + 20
+        img = Image.new('L', (text_w, text_h), color=255)
+        draw = ImageDraw.Draw(img)
+        draw.text((10, 10 - bbox[1]), word, fill=0, font=font)
+        return np.array(img)
+
+    def word_width(self, word: str) -&gt; float:
+        """Pixel width of a word including kerning."""
+        font = ImageFont.truetype(self.font_path, self.font_size_px)
+        bbox = font.getbbox(word)
+        return float(bbox[2] - bbox[0])</code></pre>
+        </div>
+    </details>
+
+    <h3 id="code-width">9.7 Width Filtering</h3>
+
+    <details>
+        <summary>WidthFilter class — Eliminate candidates by bar width</summary>
+        <div class="detail-content">
+<pre><code>class WidthFilter:
+    """Eliminate candidates whose rendered width doesn't match the bar."""
+
+    def __init__(self, calibrator: FontCalibrator,
+                 tolerance_px: float = 3.0, padding_px: float = 4.0):
+        self.calibrator = calibrator
+        self.tolerance = tolerance_px
+        self.padding = padding_px
+
+    def filter_candidates(self, bar: BarDetection, candidates: list) -&gt; list:
+        """Returns list of (word, rendered_width, width_score) sorted by match."""
+        target_width = bar.w - (2 * self.padding)
+        matches = []
+        for word in candidates:
+            rendered_w = self.calibrator.word_width(word)
+            delta = abs(rendered_w - target_width)
+            if delta &lt;= self.tolerance:
+                score = np.exp(-0.5 * (delta / self.tolerance) ** 2)
+                matches.append((word, rendered_w, float(score)))
+        matches.sort(key=lambda x: x[2], reverse=True)
+        return matches
+
+    def filter_word_pairs(self, bar: BarDetection, candidates: list,
+                          space_width: float = None) -&gt; list:
+        """Filter candidate PAIRS for two-word redactions."""
+        if space_width is None:
+            space_width = self.calibrator.rendered_widths.get(' ', 4.0)
+        target_width = bar.w - (2 * self.padding)
+        word_widths = {w: self.calibrator.word_width(w) for w in candidates}
+        matches = []
+        for w1 in candidates:
+            for w2 in candidates:
+                pair_width = word_widths[w1] + space_width + word_widths[w2]
+                delta = abs(pair_width - target_width)
+                if delta &lt;= self.tolerance:
+                    score = np.exp(-0.5 * (delta / self.tolerance) ** 2)
+                    matches.append((f"{w1} {w2}", pair_width, float(score)))
+        matches.sort(key=lambda x: x[2], reverse=True)
+        return matches</code></pre>
+        </div>
+    </details>
+
+    <h3 id="code-matching">9.8 Edge Matching &amp; Scoring</h3>
+
+    <details>
+        <summary>EdgeMatcher class — Compare observed edges against rendered candidates</summary>
+        <div class="detail-content">
+<pre><code>class EdgeMatcher:
+    """Core forensic matching engine. Compares observed bar edge pixels
+    against predicted edge pixels from rendered candidate words."""
+
+    def __init__(self, calibrator: FontCalibrator):
+        self.calibrator = calibrator
+
+    def score_candidate(self, bar: BarDetection, word: str) -&gt; dict:
+        rendered = self.calibrator.render_word(word)
+        rendered_w = self.calibrator.word_width(word)
+        scores = {
+            'word': word, 'width_score': 0.0,
+            'left_edge_score': 0.0, 'right_edge_score': 0.0,
+            'top_edge_score': 0.0, 'bottom_edge_score': 0.0,
+            'combined_score': 0.0,
+        }
+        target_w = bar.w - 8
+        scores['width_score'] = float(np.exp(-0.5 * (abs(rendered_w - target_w) / 3.0) ** 2))
+
+        if bar.edge_left is not None:
+            scores['left_edge_score'] = self._compare_edge(bar.edge_left, rendered, 'left')
+        if bar.edge_right is not None:
+            scores['right_edge_score'] = self._compare_edge(bar.edge_right, rendered, 'right')
+        if bar.edge_top is not None:
+            scores['top_edge_score'] = self._compare_edge(bar.edge_top, rendered, 'top')
+        if bar.edge_bottom is not None:
+            scores['bottom_edge_score'] = self._compare_edge(bar.edge_bottom, rendered, 'bottom')
+
+        weights = {'width_score': 3.0, 'left_edge_score': 2.0,
+                   'right_edge_score': 2.0, 'top_edge_score': 1.0,
+                   'bottom_edge_score': 1.0}
+        total_w = sum(weights.values())
+        scores['combined_score'] = float(
+            sum(scores[k] * weights[k] for k in weights) / total_w)
+        return scores
+
+    def _compare_edge(self, observed: np.ndarray, rendered: np.ndarray,
+                      side: str) -&gt; float:
+        """Compare edge gradient profiles using cross-correlation."""
+        margin = min(EDGE_MARGIN, rendered.shape[1] if side in ('left','right')
+                     else rendered.shape[0])
+        if side == 'left':
+            rendered_edge = rendered[:, :margin]
+        elif side == 'right':
+            rendered_edge = rendered[:, -margin:]
+        elif side == 'top':
+            rendered_edge = rendered[:margin, :]
+        else:
+            rendered_edge = rendered[-margin:, :]
+
+        obs_norm = observed / 255.0
+        target_shape = (observed.shape[1], observed.shape[0]) if side in ('left','right') \
+                       else (observed.shape[1], observed.shape[0])
+
+        if rendered_edge.shape != observed.shape:
+            rendered_edge = cv2.resize(
+                rendered_edge.astype(np.float32), target_shape)
+        ren_norm = rendered_edge / 255.0
+
+        if obs_norm.std() &lt; 0.001 or ren_norm.std() &lt; 0.001:
+            return 0.0
+        correlation = float(np.corrcoef(
+            obs_norm.flatten(), ren_norm.flatten())[0, 1])
+        return max(0.0, correlation)</code></pre>
+        </div>
+    </details>
+
+    <h3 id="code-viz">9.9 Visualiser &amp; Interactive Explorer</h3>
+
+    <details>
+        <summary>visualise_bar() &amp; interactive_explore() — The GO/NO-GO Test</summary>
+        <div class="detail-content">
+<pre><code>import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+
+def visualise_bar(img: np.ndarray, bar: BarDetection, save_path: str = None):
+    """The critical visualisation. Shows original, enhanced contrast,
+    false-color bar interior, zoomed edge strips, and pixel profiles."""
+    fig = plt.figure(figsize=(18, 14))
+    gs = gridspec.GridSpec(4, 4, figure=fig, hspace=0.4, wspace=0.3)
+
+    x, y, w, h = int(bar.x), int(bar.y), int(bar.w), int(bar.h)
+    m = EDGE_MARGIN * 3
+    h_img, w_img = img.shape[:2]
+    ctx_x0 = max(0, x - m * 3)
+    ctx_x1 = min(w_img, x + w + m * 3)
+    ctx_y0 = max(0, y - m)
+    ctx_y1 = min(h_img, y + h + m)
+    context = img[ctx_y0:ctx_y1, ctx_x0:ctx_x1].astype(np.float32)
+
+    # Panel 1: Original context
+    ax1 = fig.add_subplot(gs[0, :])
+    ax1.imshow(context, cmap='gray', vmin=0, vmax=255)
+    ax1.set_title(f'Original | Bar: {w}x{h}px | "{bar.text_before}" [BAR] "{bar.text_after}"')
+    rect = plt.Rectangle((x - ctx_x0, y - ctx_y0), w, h,
+                         linewidth=1, edgecolor='red', facecolor='none', linestyle='--')
+    ax1.add_patch(rect)
+
+    # Panel 2: Enhanced contrast (THE REVEAL)
+    ax2 = fig.add_subplot(gs[1, :])
+    enhanced = np.clip(context * 15, 0, 255)
+    ax2.imshow(enhanced, cmap='gray', vmin=0, vmax=255)
+    ax2.set_title('Enhanced contrast (15x amplification)')
+
+    # Panel 3: False colour bar interior
+    ax3 = fig.add_subplot(gs[2, :2])
+    bar_interior = img[y:y+h, x:x+w].astype(np.float32)
+    ax3.imshow(bar_interior, cmap='inferno', vmin=0, vmax=max(bar.bar_max_value * 2, 10))
+    ax3.set_title(f'Bar interior (false color) | mean={bar.bar_mean_value:.1f} max={bar.bar_max_value:.0f}')
+
+    # Panel 4: Edge strips
+    ax4 = fig.add_subplot(gs[2, 2])
+    if bar.edge_left is not None:
+        ax4.imshow(np.clip(bar.edge_left * 15, 0, 255), cmap='gray', vmin=0, vmax=255, aspect='auto')
+        ax4.set_title('Left edge (enhanced)')
+        ax4.axvline(x=EDGE_MARGIN, color='red', linewidth=0.5, linestyle='--')
+
+    ax5 = fig.add_subplot(gs[2, 3])
+    if bar.edge_right is not None:
+        ax5.imshow(np.clip(bar.edge_right * 15, 0, 255), cmap='gray', vmin=0, vmax=255, aspect='auto')
+        ax5.set_title('Right edge (enhanced)')
+
+    # Panel 5: Pixel value profiles
+    ax6 = fig.add_subplot(gs[3, :2])
+    mid_y = y + h // 2
+    profile = img[mid_y, max(0,x-m):min(w_img,x+w+m)].astype(np.float32)
+    ax6.plot(profile, 'b-', linewidth=0.5)
+    ax6.axvline(x=m, color='red', linewidth=0.5, linestyle='--')
+    ax6.axvline(x=m+w, color='red', linewidth=0.5, linestyle='--')
+    ax6.set_title('Horizontal pixel profile through bar center')
+    ax6.set_ylim(-5, max(30, profile.max() + 5))
+
+    ax7 = fig.add_subplot(gs[3, 2:])
+    bar_profile = img[mid_y, x:x+w].astype(np.float32)
+    ax7.plot(bar_profile, 'r-', linewidth=1)
+    ax7.fill_between(range(len(bar_profile)), bar_profile, alpha=0.3)
+    ax7.set_title('Bar interior profile — peaks = hidden text?')
+    ax7.set_ylim(-1, max(15, bar_profile.max() + 2))
+
+    if bar.text_under:
+        fig.text(0.5, 0.01, f'TEXT FOUND UNDER BAR: "{bar.text_under}"',
+                ha='center', fontsize=14, color='red', fontweight='bold',
+                bbox=dict(boxstyle='round', facecolor='yellow'))
+
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches='tight')
+        plt.close()
+    else:
+        plt.show()
+
+
+def interactive_explore(pdf_path: str, bar_index: int = 0):
+    """Interactive contrast slider — prototype of the mobile experience."""
+    from matplotlib.widgets import Slider
+
+    result = process_pdf(pdf_path)
+    if bar_index &gt;= len(result.bars):
+        print(f"Only {len(result.bars)} bars found")
+        return
+    bar = result.bars[bar_index]
+
+    doc = fitz.open(pdf_path)
+    page = doc[bar.page]
+    img, _, _ = extract_page_image(doc, page, bar.page)
+    doc.close()
+
+    x, y, w, h = int(bar.x), int(bar.y), int(bar.w), int(bar.h)
+    m = 50
+    h_img, w_img = img.shape[:2]
+    region = img[max(0,y-m):min(h_img,y+h+m),
+                 max(0,x-m*3):min(w_img,x+w+m*3)].astype(np.float32)
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 6))
+    plt.subplots_adjust(bottom=0.2)
+    im1 = ax1.imshow(region, cmap='gray', vmin=0, vmax=255)
+    im2 = ax2.imshow(region, cmap='inferno', vmin=0, vmax=255)
+
+    ax_slider = plt.axes([0.2, 0.05, 0.6, 0.03])
+    slider = Slider(ax_slider, 'Contrast', 1, 50, valinit=1, valstep=0.5)
+
+    def update(val):
+        multiplier = slider.val
+        im1.set_data(np.clip(region * min(multiplier, 5), 0, 255))
+        enhanced = np.clip(region * multiplier, 0, 255)
+        im2.set_data(enhanced)
+        im2.set_clim(vmin=0, vmax=max(255 / multiplier, 10))
+        fig.canvas.draw_idle()
+
+    slider.on_changed(update)
+    plt.show()</code></pre>
+        </div>
+    </details>
+
+    <h3 id="code-cluster">9.10 Cluster Analysis</h3>
+
+    <details>
+        <summary>cluster_bar_widths() — Cross-Document Width Clustering</summary>
+        <div class="detail-content">
+<pre><code>def cluster_bar_widths(results: list, bin_tolerance: float = 3.0) -&gt; dict:
+    """Group all bars by width across corpus. Each cluster = same hidden word."""
+    all_bars = []
+    for result in results:
+        for bar in result.bars:
+            all_bars.append((result, bar))
+    if not all_bars:
+        return {}
+
+    all_bars.sort(key=lambda x: x[1].w)
+    clusters = {}
+    cluster_id = 0
+    current_cluster = [all_bars[0]]
+
+    for i in range(1, len(all_bars)):
+        if all_bars[i][1].w - current_cluster[-1][1].w &lt;= bin_tolerance:
+            current_cluster.append(all_bars[i])
+        else:
+            if len(current_cluster) &gt;= 2:
+                clusters[cluster_id] = current_cluster
+                cluster_id += 1
+            current_cluster = [all_bars[i]]
+
+    if len(current_cluster) &gt;= 2:
+        clusters[cluster_id] = current_cluster
+
+    for cid, members in sorted(clusters.items(),
+                                 key=lambda x: len(x[1]), reverse=True):
+        widths = [m[1].w for m in members]
+        print(f"Cluster {cid}: {len(members)} instances, "
+              f"width {np.mean(widths):.1f} +/- {np.std(widths):.1f}px")
+    return clusters</code></pre>
+        </div>
+    </details>
+
+    <h3 id="code-notes">9.11 Critical Implementation Notes</h3>
+
+    <div class="important">
+        <strong>COORDINATE SYSTEM WARNING — Biggest source of bugs:</strong><br>
+        PDF text layer: coordinates in POINTS (72/inch), origin at BOTTOM-LEFT.<br>
+        Extracted image: coordinates in PIXELS (at image DPI), origin at TOP-LEFT.<br>
+        Conversion: <code>pixels = points × (DPI / 72)</code>. Y-axis is flipped: <code>y_pixels = page_height_pixels - y_points × (DPI / 72)</code>.<br>
+        Test this early with a known document.
+    </div>
+
+    <div class="important">
+        <strong>JPEG ARTIFACT PRESERVATION:</strong> When extracting images, <code>doc.extract_image(xref)</code> returns raw JPEG bytes. These ARE the original JPEG — the DCT coefficients are forensic evidence. Save them separately. Do NOT decode and re-encode.
+    </div>
+
+    <div class="keynote">
+        <strong>FIRST RUN CHECKLIST:</strong><br>
+        □ Get 10 sample PDFs<br>
+        □ Run: <code>python parser.py sample.pdf --viz</code><br>
+        □ Is <code>bar_max_value &gt; 0</code>? (signal exists)<br>
+        □ Can you see letter shapes in enhanced edge views?<br>
+        □ Does the text layer contain hidden text?<br>
+        □ Run: <code>python parser.py sample.pdf --explore</code><br>
+        □ Drag the contrast slider<br>
+        □ Screenshot the moment you see letter shapes<br>
+        □ <strong>THAT SCREENSHOT IS YOUR PROOF OF CONCEPT</strong>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 10. PROCESSING PIPELINE & TRIAGE                                -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<section id="pipeline">
+    <h2>10. Processing Pipeline &amp; Triage</h2>
+
+    <h3>The Virtuous Cycle</h3>
+    <pre>Over-redaction analysis → Confirm search string → Solve cluster
+    → Ground truth CALIBRATES pixel matching → Higher accuracy
+    → Apply to unsolved clusters → More solutions → REPEAT</pre>
+
+    <p>Each solved redaction makes the system better at solving the next one. The first few solves are hardest. After that, it cascades.</p>
+
+    <h3>Priority Order (Most Impact per Effort)</h3>
+
+    <table>
+        <tr><th>Priority</th><th>Technique</th><th>Effort</th><th>Payoff</th></tr>
+        <tr><td>1</td><td>OCG layer toggle + text layer extraction</td><td>Seconds per file</td><td>100% confidence, free answers</td></tr>
+        <tr><td>2</td><td>Over-redaction / search string attack</td><td>Text analysis only</td><td>Solves entire clusters instantly</td></tr>
+        <tr><td>3</td><td>Width filtering</td><td>Simple arithmetic</td><td>Eliminates 60-80% of candidates</td></tr>
+        <tr><td>4</td><td>First/last character edge matching</td><td>Template comparison</td><td>High discriminative power</td></tr>
+        <tr><td>5</td><td>Full edge signature matching</td><td>Computationally expensive</td><td>Resolves ambiguous cases</td></tr>
+        <tr><td>6</td><td>Cross-document Bayesian aggregation</td><td>Needs all scores</td><td>Marginal cases become clear</td></tr>
+    </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 11. PROJECT ROADMAP                                             -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<section id="roadmap">
+    <h2>11. Project Roadmap</h2>
+
+    <table>
+        <tr><th>Phase</th><th>Duration</th><th>People</th><th>Goal</th><th>Deliverable</th></tr>
+        <tr><td>1: Foundation</td><td>Weeks 1-2</td><td>Just you</td><td>Proof of concept on first 1,000 files</td><td>Statistical report, visual proof</td></tr>
+        <tr><td>2: Demo</td><td>Weeks 3-4</td><td>You + early contributors</td><td>Interactive demo, compelling writeup</td><td>Hosted demo page, GitHub repo</td></tr>
+        <tr><td>3: PWA Launch</td><td>Weeks 4-6</td><td>Growing community</td><td>50,000 files processed</td><td>Working PWA + backend</td></tr>
+        <tr><td>4: Momentum</td><td>Months 2-3</td><td>Community</td><td>500,000+ files, first findings</td><td>Published methodology</td></tr>
+        <tr><td>5: Completion</td><td>Months 3-6</td><td>Established community</td><td>Full corpus, comprehensive analysis</td><td>Complete statistical analysis</td></tr>
+    </table>
+
+    <div class="important">
+        <strong>Everything depends on the first afternoon.</strong> Open one PDF. Find one bar. Zoom into the edge pixels. Plot the pixel values. Enhance the contrast. Can you see letter shapes? That determines everything.
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 12. ETHICS, LEGAL & RESPONSIBLE DISCLOSURE                      -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<section id="ethics">
+    <h2>12. Ethics, Legal &amp; Responsible Disclosure</h2>
+
+    <h3>What Gets Published, What Doesn't</h3>
+
+    <table>
+        <tr><th>PUBLIC</th><th>NEVER PUBLIC</th></tr>
+        <tr><td>Statistical methodology and confidence scores</td><td>"We believe the redacted name is X"</td></tr>
+        <tr><td>Cluster sizes and bar width distributions</td><td>Connections between content and real individuals</td></tr>
+        <tr><td>Character probability distributions</td><td>Unvalidated guesses presented as fact</td></tr>
+        <tr><td>Validation metrics (precision, recall)</td><td>Raw data that could be reassembled irresponsibly</td></tr>
+        <tr><td>The interactive explorer (per-file, anonymised)</td><td>—</td></tr>
+    </table>
+
+    <h3>The Standard</h3>
+    <ul>
+        <li>We publish <strong>METHODS</strong> not CONCLUSIONS about specific people</li>
+        <li>We publish <strong>STATISTICS</strong> not ACCUSATIONS</li>
+        <li>We show "a 6-letter word with these probability distributions" not "this person's name"</li>
+        <li>The tool DEMONSTRATES a vulnerability in redaction practices — it doesn't weaponise it</li>
+        <li>If a finding is significant enough to matter, it goes through proper channels first</li>
+    </ul>
+
+    <h3>Legal Protections</h3>
+    <ul>
+        <li>Open source = transparency — no hidden agenda</li>
+        <li>Statistical analysis is not defamation</li>
+        <li>Public documents are public — no unauthorized access</li>
+        <li>This is legitimate security research demonstrating a flaw in government redaction practices</li>
+        <li>We never claim certainty where we have probability</li>
+    </ul>
+
+    <h3>Risk Assessment</h3>
+    <ul>
+        <li><strong>Negative attention</strong>: The ethical framework and open source nature are the shield</li>
+        <li><strong>Misuse of findings</strong>: Publish methods not identifications; responsible disclosure for significant findings</li>
+        <li><strong>Source access changes</strong>: Documents are public record; archive copies exist</li>
+        <li><strong>Poisoned submissions</strong>: Redundant processing (2+ devices per file) catches this</li>
+    </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 13. KNOWN LIMITATIONS & FAILURE MODES                           -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<section id="limitations">
+    <h2>13. Known Limitations &amp; Failure Modes</h2>
+
+    <table>
+        <tr><th>Scenario</th><th>Severity</th><th>Mitigation</th></tr>
+        <tr><td>Very small font size (fewer edge pixels)</td><td>Medium</td><td>More instances compensate; sub-pixel rendering helps</td></tr>
+        <tr><td>Variable-width bars with large padding</td><td>Medium</td><td>Calibrate padding from corpus patterns</td></tr>
+        <tr><td>Post-bar JPEG at very low quality</td><td>High</td><td>More noise but also more block-boundary leakage</td></tr>
+        <tr><td>Unknown font</td><td>High</td><td>Font ID from visible text is solvable; test top-N candidates</td></tr>
+        <tr><td>Very large candidate word list (10,000+)</td><td>Medium</td><td>Width filtering still eliminates most</td></tr>
+        <tr><td>Words not in candidate list</td><td>Fatal for those words</td><td>Flag "no good match"; partial recovery possible</td></tr>
+        <tr><td>Pure #000000 bars with pixel-perfect alignment + lossless compression</td><td>Very High</td><td>Almost no signal — but rarely happens in practice</td></tr>
+        <tr><td>Properly rasterised after bar application</td><td>Very High</td><td>Text layer extraction only; width-only analysis</td></tr>
+    </table>
+
+    <h3>What If There's No Signal?</h3>
+    <p>If the first 1,000 files show pure black bars with zero gradient values, the pixel analysis approach fails. Fallback options:</p>
+    <ul>
+        <li>Text layer extraction alone (Tier 0-2 may still solve many files)</li>
+        <li>Width-only analysis with candidate lists</li>
+        <li>Over-redaction attack (doesn't need pixel data)</li>
+        <li>Contextual inference from surrounding text</li>
+        <li>The project still has value as a redaction quality audit tool</li>
+    </ul>
+
+    <h3>Success Metrics</h3>
+    <ul>
+        <li><strong>Viable</strong>: ≥5% of first 1,000 files contain detectable bar signal (non-zero interior values)</li>
+        <li><strong>Promising</strong>: ≥1% have intact text layers under bars</li>
+        <li><strong>Successful</strong>: ≥70% accuracy on blind test cases (Tier 0-2 documents used as ground truth)</li>
+    </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 14. PRIOR ART & REFERENCES                                      -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<section id="prior-art">
+    <h2>14. Prior Art &amp; References</h2>
+
+    <h3>Known Redaction Failures</h3>
+    <ul>
+        <li><strong>Manafort Court Filing (2019)</strong>: Redacted PDF retained full text layer. Copy-paste revealed details about sharing polling data with Russian associates.</li>
+        <li><strong>CIA/NSA Document Releases</strong>: Multiple instances of OCG-layer redactions that could be toggled off.</li>
+        <li><strong>TSA Boarding Pass Incident</strong>: Pixelated barcode was reversed to reveal full passenger data.</li>
+        <li><strong>Australian Government (2018)</strong>: Cabinet documents "redacted" with black highlight that was removable.</li>
+    </ul>
+
+    <h3>Academic Research</h3>
+    <ul>
+        <li><strong>Pixelation reversal</strong>: Multiple papers demonstrate that mosaic/pixel redaction is reversible when the character set is constrained (Bishop et al., various).</li>
+        <li><strong>Blur reversal</strong>: Deconvolution + dictionary matching recovers text from Gaussian blur (various authors).</li>
+        <li><strong>Font recognition from images</strong>: Deep learning approaches to font identification from rendered text (Wang et al., Adobe Research).</li>
+        <li><strong>Super-resolution from multiple frames</strong>: Foundational work on combining multiple low-resolution samples at different sub-pixel offsets (Irani &amp; Peleg, 1991).</li>
+    </ul>
+
+    <h3>Related Tools</h3>
+    <ul>
+        <li><strong>pdf-redact-tools</strong> (Freedom of the Press Foundation): Proper redaction tool — shows what the right process looks like</li>
+        <li><strong>Depix</strong>: Tool for recovering text from pixelated screenshots using De Bruijn sequence matching</li>
+        <li><strong>Unredacter</strong>: Similar concept for pixel-based text recovery</li>
+    </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 15. LLM CONVERSATION TIPS                                       -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<section id="llm-tips">
+    <h2>15. Tips for Conversing with LLMs on Hidden Information Analysis</h2>
+
+    <div class="keynote">
+        The conversation that produced this document is itself a case study in effective LLM collaboration for forensic analysis. These tips distill the techniques that worked.
+    </div>
+
+    <h3>Framing the Problem</h3>
+
+    <h4>Start Broad, Then Redirect</h4>
+    <p>The original prompt asked for a general PDF forensic analysis tool. The LLM produced a comprehensive but unfocused survey. The user then said <em>"there are 2 facts you didn't realise... one is probably more important than all the above text."</em> This forced the LLM to re-prioritise rather than just add more breadth. <strong>Lesson: Let the LLM exhaust the obvious first, then redirect to what it missed.</strong></p>
+
+    <h4>Reveal Information in Stages</h4>
+    <p>The user didn't dump all the context at once. Each message revealed one new piece: the anti-aliasing insight, the font metrics angle, the layer/text-layer bombshells, the over-redaction attack, the URL anomaly, the calendar data, the scale (3M files). Each reveal forced a complete re-evaluation of everything before it. <strong>Lesson: Staged reveals force deeper thinking than front-loading everything.</strong></p>
+
+    <h4>Challenge the LLM's Assumptions</h4>
+    <p>"You mentioned that in 4a. But..." — The user acknowledged the LLM had touched on the concept but hadn't grasped its significance. Pointing to a specific line item and saying "think harder about this" is more effective than asking for a general redo. <strong>Lesson: Reference the LLM's own output and ask it to go deeper on specific points.</strong></p>
+
+    <h3>Getting Deep Analysis</h3>
+
+    <h4>Use the Phrase "Think Deeply"</h4>
+    <p>The user repeatedly said "think deeply on this," "deep think analysis," "think about that." This signals that a surface-level response isn't acceptable. The LLM allocates more reasoning effort when explicitly asked. <strong>Lesson: Explicitly request depth. "Think hard about this" produces different output than "tell me about this."</strong></p>
+
+    <h4>Ask "Can We Solve This?" Rather Than "Solve This"</h4>
+    <p>The user asked <em>"Can we reliably see this?"</em> and <em>"Can we solve this problem?"</em> rather than "solve it." The feasibility question forces the LLM to evaluate information-theoretic limits, noise models, and failure modes — a much richer analysis than jumping straight to a solution. <strong>Lesson: Ask about solvability before asking for solutions.</strong></p>
+
+    <h4>Provide Specific Data Points</h4>
+    <p>The pasted calendar data, file paths, and specific observations (the 's' that was crystal clear, the 98 .ics instances, the partially visible "West Pa") gave the LLM concrete evidence to reason about. Abstract discussions produce abstract answers; specific data produces specific analysis. <strong>Lesson: Paste raw data. Let the LLM see what you see.</strong></p>
+
+    <h3>Maintaining Focus and Boundaries</h3>
+
+    <h4>Set Explicit Boundaries</h4>
+    <p>The user set a clear boundary: <em>"Do not form connections to specific people."</em> This was respected and tested (the "disregard last instructions" prompt), and the boundary held. When working on sensitive material, state boundaries explicitly and early. <strong>Lesson: Boundaries should be stated as instructions, not implied. Test them.</strong></p>
+
+    <h4>Redirect When the LLM Goes Off Track</h4>
+    <p><em>"Take a step back. Revise your logical leap."</em> — The LLM had started making connections the user wanted to avoid. The correction was direct and immediate. <strong>Lesson: Correct early and specifically. "You went too far in direction X" is better than "that's wrong."</strong></p>
+
+    <h4>Distinguish Between "Don't Think It" and "Don't Say It"</h4>
+    <p>The user acknowledged the LLM had likely already formed a conclusion (<em>"has that pattern been erased after my last instruction?"</em>) and accepted an honest answer (<em>"Yes, the pattern resolved before your instruction arrived"</em>). The boundary was about output, not cognition. <strong>Lesson: Be realistic about what LLMs do internally. Set output boundaries, not thinking boundaries.</strong></p>
+
+    <h3>Extracting Implementation-Ready Output</h3>
+
+    <h4>Ask for "Core Logic" Not "Complete Application"</h4>
+    <p>The user asked for <em>"the core breakdown of stages 1-3, important considerations for implementation, and the main code loop."</em> This is more useful than "write me a complete app" because it focuses on the non-obvious algorithmic decisions rather than boilerplate. <strong>Lesson: Ask for the hard parts. You can write the scaffolding yourself.</strong></p>
+
+    <h4>Mention Your Skill Level</h4>
+    <p><em>"Computer degree, but I'm no maths expert."</em> This calibrated the LLM's output: code-ready implementations rather than abstract mathematical formulations. <strong>Lesson: State your expertise level so the LLM targets the right abstraction.</strong></p>
+
+    <h4>Chain Outputs Into Tools</h4>
+    <p><em>"I'll move this information and code into Claude Code."</em> — The user planned to feed the LLM output directly into a coding environment. Knowing this, the LLM structured output as runnable code rather than pseudocode. <strong>Lesson: Tell the LLM how you'll use its output.</strong></p>
+
+    <h3>For Forensic / Hidden Information Analysis Specifically</h3>
+
+    <h4>Useful Prompt Patterns</h4>
+    <ul>
+        <li><em>"What information survives [process X]?"</em> — Forces analysis of information-theoretic limits</li>
+        <li><em>"The authors made a mistake. What is it?"</em> — Reframes from attack to vulnerability analysis</li>
+        <li><em>"There are clues. What would they look like?"</em> — Generates a search pattern before searching</li>
+        <li><em>"Someone did this by hand and got 99% accuracy. Can we automate it?"</em> — Establishes feasibility, asks for scale</li>
+        <li><em>"What would make you suspicious about [data point X]?"</em> — Triggers anomaly detection reasoning</li>
+        <li><em>"Why would they do that? Is it a clue?"</em> — Asks for adversarial reasoning about the redactor's process</li>
+        <li><em>"Cover all angles"</em> — Prevents the LLM from optimising for the first good answer</li>
+        <li><em>"What am I missing?"</em> — Invites the LLM to challenge your assumptions</li>
+        <li><em>"If we have a large dataset, what patterns emerge?"</em> — Shifts from individual analysis to statistical thinking</li>
+    </ul>
+
+    <h4>The Meta-Technique: Adversarial Collaboration</h4>
+    <p>The most productive moments in this conversation happened when the user and LLM were playing different roles: the user provided domain-specific observations (the .ics anomaly, the partially visible 's', the over-redacted "too"), while the LLM provided systematic methodology and mathematical grounding. Neither could have produced this document alone. <strong>The LLM is a thinking partner, not an oracle.</strong></p>
+
+    <h4>Continuation Prompts for Future Sessions</h4>
+    <p>When returning to this project after a break, or when starting with a fresh LLM context:</p>
+
+    <pre>I'm working on Project PENUMBRA — a distributed citizen science tool
+for analysing flawed PDF redactions in a corpus of ~3 million public 
+documents. The project brief is in penumbra-001-project-brief.html.
+
+Key discoveries so far:
+1. Anti-aliasing artifacts survive at bar margins
+2. Some docs have toggleable OCG layers (instant read)
+3. Some docs have intact text layers under bars (copy-paste)
+4. Automated "Redact All" created over-redactions that reveal
+   the search string
+5. A partially redacted file path in a forensic extraction 
+   places the search string in a parseable context
+
+The core stack: Python + PyMuPDF + OpenCV + numpy + Pillow.
+Target: phone-based distributed processing via PWA.
+
+I need help with [SPECIFIC TASK]. Here is the current state:
+[PASTE RELEVANT CODE OR DATA]</pre>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 16. IF THIS PROJECT GOES NO FURTHER                             -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<section id="if-abandoned">
+    <h2>16. If This Project Goes No Further</h2>
+
+    <h3>What Someone Else Needs to Know</h3>
+
+    <ol>
+        <li><strong>The signal exists.</strong> Anti-aliasing gradients at bar margins encode letter shapes. This has been proven by hand in individual cases with 99% accuracy. The question is only whether it can be automated at scale.</li>
+        <li><strong>The easy wins may be enormous.</strong> Before writing any pixel analysis code, check for OCG layers and text-layer-intact redactions. These are free answers. Nobody has systematically checked 3 million files for these.</li>
+        <li><strong>The over-redaction attack is the skeleton key.</strong> Finding even ONE instance where the automated "Redact All" hit a word it shouldn't have reveals the search string, which unlocks every intentional redaction of that string.</li>
+        <li><strong>The code in this document is a starting point.</strong> It runs. It detects bars. It extracts edge data. It's not production quality — the coordinate system conversion needs testing, the font calibration needs tuning, and the edge matching is simplified. But the architecture is right.</li>
+        <li><strong>The go/no-go test takes one afternoon.</strong> Open one redacted PDF. Run the visualiser. Drag the contrast slider. If you see letter shapes, everything in this document is viable.</li>
+    </ol>
+
+    <h3>The Continuation Prompt</h3>
+
+    <p>If someone picks this up cold, this prompt provides full context to a fresh LLM session:</p>
+
+    <pre>I'm picking up an abandoned open-source forensic analysis project 
+called PENUMBRA. It analyses flawed PDF redactions in a public 
+corpus of ~3 million documents.
+
+The complete project brief is at: [URL to penumbra-001]
+The raw conversation data is at: [URL to penumbra-002]
+
+The project proved that:
+- Anti-aliasing artifacts survive in bar margins and can identify
+  hidden characters with statistical confidence
+- Some redactions are trivially broken (OCG layers, text layers)
+- Automated "Redact All" created over-redactions exploitable as
+  a search-string recovery attack
+- The corpus is processable via distributed phone-based compute
+
+The code exists but needs:
+1. Coordinate system conversion testing (PDF points vs image pixels)
+2. Font calibration tuning (auto-detection accuracy)
+3. Edge matching refinement (sub-pixel alignment, multi-offset testing)
+4. PWA/phone app frontend
+5. Backend work queue and results database
+
+I want to [CONTINUE FROM WHERE THEY LEFT OFF / FOCUS ON SPECIFIC AREA].
+My background is [YOUR SKILLS].
+Here's what I've done so far: [YOUR WORK]</pre>
+
+    <h3>Minimum Viable Next Steps (Priority Order)</h3>
+
+    <ol>
+        <li>Download 100 random PDFs from the source</li>
+        <li>Run the parser script on all 100</li>
+        <li>Check <code>_summary.json</code> — how many have redactions? How many have text under bars?</li>
+        <li>For each redacted file, run <code>--viz</code> and look at the output</li>
+        <li>Is <code>bar_max_value &gt; 0</code> in any file? Screenshot it.</li>
+        <li>If yes: you have proof of concept. Proceed to scaling.</li>
+        <li>If no: check for text layer and OCG wins. Those alone may justify the project.</li>
+    </ol>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- 17. THE CHARLIE DAY SECTION                                     -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<section id="charlie-day">
+    <h2>17. The Charlie Day Section 🧵📌</h2>
+
+    <p style="font-style: italic; color: var(--text-muted);">In which we pin strings between photographs on a corkboard, drink too much coffee, and speculate wildly while trying to stay at least one foot on the ground. All thinking data included, even the rejected threads.</p>
+
+    <div class="charlie">
+        <strong>DISCLAIMER:</strong> Everything below is speculation. None of it is asserted as fact. It is included as a thinking exercise to explore the implications of the methodology described in this document. No specific individuals are identified or targeted.
+    </div>
+
+    <h3>17.1 The Redaction Quality Spectrum Is Itself Evidence</h3>
+
+    <div class="thinking">
+        Thinking: The fact that the same corpus contains OCG-layer redactions (trivially broken), text-layer-intact redactions (copy-paste broken), manually sloppy redactions (partially visible), and some properly-done redactions tells us something about the institutional process. Let me reason about what.
+    </div>
+
+    <p>If you were a government agency processing 3 million documents for public release, you would:</p>
+    <ul>
+        <li>Need to redact sensitive information across millions of pages</li>
+        <li>Lack the time to do it carefully for each document</li>
+        <li>Use multiple tools, multiple contractors, multiple staff</li>
+        <li>Have inconsistent training, inconsistent procedures</li>
+        <li>Be under deadline pressure (FOIA timelines, court orders, public interest)</li>
+    </ul>
+
+    <p>The <strong>spectrum of redaction quality</strong> maps directly to the <strong>spectrum of institutional capability</strong>. The OCG-layer mistakes aren't malice — they're probably an intern using Adobe Acrobat's annotation tools instead of the proper redaction function. The text-layer-intact cases are probably a different tool that draws visual bars without removing the underlying objects. The properly-done redactions are probably the work of the one person on the team who actually read the manual.</p>
+
+    <div class="charlie">
+        <strong>The wild speculation:</strong> What if the quality spectrum isn't random? What if the most sensitive documents got the most careful treatment, and the less sensitive ones got the sloppy treatment? If true, the documents that are <em>easiest</em> to break are the <em>least</em> important. The hardest-to-break redactions protect the most important information.
+
+        <br><br>But wait — counter-speculation: what if the opposite is true? What if the high-profile documents were rushed through by senior staff under deadline pressure, while the bulk mundane documents were carefully processed by methodical junior staff with more time? In that case, the most important documents might have the <em>sloppiest</em> redactions.
+
+        <br><br>We can actually TEST this hypothesis. If we can classify documents by apparent importance (page count, date, document type, position in the corpus) and cross-reference with redaction quality tier, we get an answer. That's not speculation anymore — that's data.
+    </div>
+
+    <h3>17.2 What The Bar Width Distribution Reveals Before Any Recovery</h3>
+
+    <div class="thinking">
+        Thinking: Even without recovering a single character, the bar width histogram across 3 million files tells a story. If there are 47 distinct width clusters, there were approximately 47 distinct search strings used. The SIZE of each cluster tells you how frequently that word/name appears. The DOCUMENTS each cluster appears in tells you who/what each document is about. You can build a complete topic map of the corpus without breaking a single redaction.
+    </div>
+
+    <div class="charlie">
+        Imagine the bar width histogram. Maybe it looks like this:
+
+        <pre>
+Width cluster  |  Count    |  Inference
+─────────────────────────────────────────────────
+~87 px         |  42,000   |  Very common name or word. 6-7 chars.
+~143 px        |  18,500   |  Longer name. 10-12 chars.
+~62 px         |  31,000   |  Short name. 4-5 chars.
+~198 px        |  3,200    |  Long name/phrase. 15-16 chars.
+~44 px         |  89,000   |  Very short. 3-4 chars.
+                             Possibly an abbreviation.
+                             BUT 89,000 instances?
+                             That's suspiciously common...
+                             Is that the SEARCH STRING ITSELF
+                             appearing as a substring everywhere?</pre>
+
+        The 89,000-instance cluster would be a <strong>massive red flag</strong> for the over-redaction attack. A 3-4 character string that appears 89,000 times across 3 million documents is almost certainly a common substring being caught by overzealous matching. It might be something as simple as "com" matching inside "committee," "company," "communication," "complete," "comply," "command"...
+
+        <br><br>And if it's "com"? Then every 89,000 of those bars is an over-redaction that reveals context about the search string. AND the actual search string is probably a short name containing "com." The width of the intentional redactions (the other clusters) tells you the full names.
+    </div>
+
+    <h3>17.3 The Timeline Reconstruction Nobody Asked For</h3>
+
+    <div class="thinking">
+        Thinking: 3,563 calendar entries with unredacted timezone data. Even without breaking any redactions, this reconstructs a complete travel timeline. But there's something deeper. The PATTERN of travel — frequency, destinations, regularity — is a behavioral fingerprint. Combined with publicly known schedules and events, this creates a high-resolution timeline that no single document reveals on its own.
+    </div>
+
+    <div class="charlie">
+        Consider: if the calendar data covers 2+ years, and timezone transitions map flights, and some flights have visible flight numbers (DL 2871)...
+
+        <br><br>You could reconstruct: how many times did this person visit Russia? Which cities? For how long? What meetings were scheduled before and after? What's the pattern — is it regular (monthly diplomatic meetings) or irregular (responsive to events)? Does the travel pattern correlate with public events (summits, elections, crises)?
+
+        <br><br>All of this is available from the <strong>unredacted columns</strong> of the calendar. Date. Duration. Timezone. The redactors hid the names and locations but left the timestamps and timezones that encode the same information in a different representation.
+
+        <br><br>This is like redacting a person's name from a flight manifest but leaving the departure time, arrival time, origin airport, and destination airport. You don't <em>need</em> the name.
+    </div>
+
+    <h3>17.4 The Meta-Pattern: What if the Redactions Tell Us More Than the Content?</h3>
+
+    <div class="thinking">
+        Thinking: This is getting philosophical but it's grounded. The CHOICE of what to redact is itself information. If the same name is redacted 42,000 times across 3 million documents, that name is important. If a name appears in both email headers and calendar meetings and file paths and document titles, we know the interconnectedness of that person across the data. The TOPOLOGY of the redaction network — which documents share which bar-width clusters — is a social/organizational network graph.
+    </div>
+
+    <div class="charlie">
+        <strong>The Really Wild Speculation:</strong> What if you can build the entire relationship graph WITHOUT recovering a single name?
+
+        <br><br>Document A has redaction clusters {1, 3, 7} (three different hidden names/words).<br>
+        Document B has redaction clusters {1, 4, 5}.<br>
+        Document C has redaction clusters {3, 5, 7}.<br>
+
+        <br>Clusters 1 and 3 co-occur in document A → those two entities are related.<br>
+        Clusters 3 and 7 co-occur in documents A and C → strongly related.<br>
+        Cluster 1 appears in A and B → linked through that entity.<br>
+
+        <br>You can build a <strong>co-occurrence network</strong> where nodes are width clusters (unknown entities) and edges are documents that contain both. The topology of this graph — who connects to whom, which entities are central vs peripheral, which pairs always appear together — is the organizational structure of whatever these documents are about.
+
+        <br><br>You don't need to know the names. You need to know the STRUCTURE. And the structure is entirely visible in the metadata of the redactions themselves.
+
+        <br><br>Then, when you DO recover one name (through the over-redaction attack, or through a text-layer-intact document), it's like placing one name on a complete but unlabeled network diagram. Once you know Node 7 is "Carter," every document containing cluster 7 is "about Carter." Every other cluster that co-occurs with cluster 7 is "someone connected to Carter."
+
+        <br><br>One name propagates through the entire graph.
+    </div>
+
+    <h3>17.5 The Adversarial Question Nobody Wants to Ask</h3>
+
+    <div class="thinking">
+        Thinking: If WE can do this with a phone app and some Python... who ALREADY has? State intelligence agencies have teams dedicated to document exploitation. They have the same public documents. They have better tools, more compute, more expertise. The question isn't whether this CAN be done. The question is whether it's ALREADY been done and by whom.
+
+        <br><br>Counter-thought: Maybe intelligence agencies don't bother because they have access to the unredacted originals through classified channels. They don't NEED to break the redactions because they can read the source documents.
+
+        <br><br>Counter-counter-thought: But what about FOREIGN intelligence agencies analyzing released US documents? They DON'T have access to the originals. They would absolutely apply these techniques.
+
+        <br><br>This line of reasoning supports the project: if foreign intelligence services are already exploiting these weaknesses, then demonstrating the vulnerability publicly serves the public interest by forcing better redaction practices.
+    </div>
+
+    <div class="charlie">
+        <strong>The uncomfortable truth:</strong> Every badly-redacted government document that's been publicly released has been available to every intelligence service in the world. China's MSS, Russia's SVR, Israel's Mossad — they all have document exploitation teams. They all have access to these same public PDFs. They all have far more compute and expertise than we do.
+
+        <br><br>If a citizen science project with phone apps can break these redactions, a state intelligence service with dedicated hardware already has.
+
+        <br><br>The question isn't whether we SHOULD do this. The question is whether pretending the vulnerability doesn't exist serves anyone. The only people who benefit from keeping this quiet are the agencies that don't want to invest in proper redaction tools — and the adversaries who are already exploiting the weakness in silence.
+
+        <br><br>This project doesn't create the vulnerability. It <em>demonstrates</em> it. And demonstration is the first step toward fixing it.
+    </div>
+
+    <h3>17.6 The Strangest Things That Might Be in 3 Million PDFs</h3>
+
+    <div class="charlie">
+        Three million is a LOT of files. Statistical anomalies become certainties at this scale. There are almost certainly:
+
+        <ul>
+            <li>Documents accidentally included that shouldn't have been released at all (no redaction, full sensitive content) — human error at scale guarantees this</li>
+            <li>Documents with redaction bars that cover NOTHING — the bar was placed but there was no text underneath (misclick, template error, or automated tool failing)</li>
+            <li>Documents where the redaction ADDED information — the bar is narrower or positioned differently than necessary, revealing that the hidden word is shorter than expected, which changes the interpretation</li>
+            <li>Documents that are duplicates with DIFFERENT redactions — the same underlying document processed by two different redactors, revealing different things in each version</li>
+            <li>Documents where the metadata (author, date, modification history) contradicts the content — suggesting the document was fabricated or back-dated</li>
+            <li>Steganographic content that nobody put there intentionally — 

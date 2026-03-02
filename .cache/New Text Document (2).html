@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PENUMBRA-001 — Project Brief</title>
+<style>
+  :root {
+    --bg-primary: #0d1117;
+    --bg-secondary: #161b22;
+    --bg-tertiary: #1c2333;
+    --text-primary: #e6edf3;
+    --text-secondary: #8b949e;
+    --text-muted: #6e7681;
+    --accent: #58a6ff;
+    --accent-dim: #1f6feb;
+    --border: #30363d;
+    --highlight: #ffd700;
+    --danger: #f85149;
+    --success: #3fb950;
+    --sidebar-width: 300px;
+    --header-height: 60px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.7;
+  }
+
+  /* ══════════════════════════════════════════
+     HEADER
+     ══════════════════════════════════════════ */
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--header-height);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    z-index: 1000;
+  }
+
+  .hamburger {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 5px 10px;
+    margin-right: 15px;
+  }
+
+  .header-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 3px;
+  }
+
+  .header-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-left: 15px;
+  }
+
+  .header-chain {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: monospace;
+  }
+
+  /* ══════════════════════════════════════════
+     SIDEBAR NAVIGATION
+     ══════════════════════════════════════════ */
+  .sidebar {
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    width: var(--sidebar-width);
+    height: calc(100vh - var(--header-height));
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px 0;
+    z-index: 999;
+    transition: transform 0.3s ease;
+  }
+
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 998;
+  }
+
+  .nav-section {
+    padding: 8px 20px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 15px;
+  }
+
+  .nav-section:first-child { margin-top: 0; }
+
+  .nav-link {
+    display: block;
+    padding: 6px 20px 6px 30px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    border-left: 3px solid transparent;
+    transition: all 0.15s ease;
+  }
+
+  .nav-link:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+    border-left-color: var(--accent);
+  }
+
+  .nav-link.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: var(--bg-tertiary);
+  }
+
+  .nav-link.nav-sub {
+    padding-left: 45px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .nav-importance {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+  }
+
+  .nav-importance.critical { background: var(--danger); }
+  .nav-importance.high { background: var(--highlight); }
+  .nav-importance.medium { background: var(--success); }
+
+  /* ══════════════════════════════════════════
+     MAIN CONTENT
+     ══════════════════════════════════════════ */
+  .main {
+    margin-left: var(--sidebar-width);
+    margin-top: var(--header-height);
+    padding: 40px 60px;
+    max-width: 900px;
+  }
+
+  /* ══════════════════════════════════════════
+     CONTENT STYLES
+     ══════════════════════════════════════════ */
+  h1 {
+    font-size: 32px;
+    color: var(--accent);
+    margin: 50px 0 20px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--accent-dim);
+  }
+
+  h2 {
+    font-size: 22px;
+    color: var(--text-primary);
+    margin: 35px 0 15px 0;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h3 {
+    font-size: 16px;
+    color: var(--accent);
+    margin: 25px 0 10px 0;
+  }
+
+  p { margin: 12px 0; color: var(--text-secondary); }
+
+  /* Keynote / callout boxes */
+  .keynote {
+    background: var(--bg-tertiary);
+    border-left: 4px solid var(--accent);
+    padding: 15px 20px;
+    margin: 20px 0;
+    border-radius: 0 6px 6px 0;
+  }
+
+  .keynote-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .keynote p { margin: 5px 0; font-size: 14px; }
+
+  .critical-insight {
+    background: rgba(248, 81, 73, 0.1);
+    border-left-color: var(--danger);
+  }
+
+  .critical-insight .keynote-title { color: var(--danger); }
+
+  .highlight-box {
+    background: rgba(255, 215, 0, 0.08);
+    border-left-color: var(--highlight);
+  }
+
+  .highlight-box .keynote-title { color: var(--highlight); }
+
+  /* Code blocks */
+  pre {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 15px;
+    overflow-x: auto;
+    font-size: 13px;
+    line-height: 1.5;
+    margin: 15px 0;
+  }
+
+  code {
+    font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    font-size: 13px;
+  }
+
+  /* Inline code */
+  p code, li code {
+    background: var(--bg-tertiary);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+  }
+
+  /* Collapsible sections */
+  details {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin: 15px 0;
+  }
+
+  summary {
+    padding: 12px 18px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--accent);
+    user-select: none;
+  }
+
+  summary:hover { background: var(--bg-tertiary); }
+
+  details[open] summary {
+    border-bottom: 1px solid var(--border);
+  }
+
+  details .content {
+    padding: 15px 18px;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    font-size: 14px;
+  }
+
+  th {
+    background: var(--bg-tertiary);
+    color: var(--accent);
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 2px solid var(--border);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+  }
+
+  tr:hover td { background: var(--bg-tertiary); }
+
+  /* Acknowledgement section */
+  .acknowledgement {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 25px 30px;
+    margin: 30px 0;
+  }
+
+  .acknowledgement h3 { color: var(--highlight); margin-top: 0; }
+
+  .acknowledgement a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .acknowledgement a:hover { text-decoration: underline; }
+
+  .acknowledgement .credit-role {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+  }
+
+  /* Charlie Day section */
+  .charlie-day {
+    background: linear-gradient(135deg, 
+      rgba(248,81,73,0.05), 
+      rgba(255,215,0,0.05), 
+      rgba(88,166,255,0.05));
+    border: 1px dashed var(--highlight);
+    border-radius: 8px;
+    padding: 25px;
+    margin: 20px 0;
+  }
+
+  .charlie-day h2 {
+    color: var(--highlight);
+    border-bottom-color: var(--highlight);
+  }
+
+  /* LLM Tips section */
+  .llm-tip {
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    padding: 12px 18px;
+    margin: 10px 0;
+    border-left: 3px solid var(--success);
+  }
+
+  .llm-tip strong { color: var(--success); }
+
+  /* Chain metadata footer */
+  .chain-meta {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 15px 20px;
+    margin-top: 60px;
+    font-family: monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* ══════════════════════════════════════════
+     RESPONSIVE — MOBILE
+     ══════════════════════════════════════════ */
+  @media (max-width: 900px) {
+    .hamburger { display: block; }
+
+    .sidebar {
+      transform: translateX(-100%);
+    }
+
+    .sidebar.open {
+      transform: translateX(0);
+    }
+
+    .sidebar-overlay.open {
+      display: block;
+    }
+
+    .main {
+      margin-left: 0;
+      padding: 30px 20px;
+    }
+
+    .header-subtitle { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="header">
+  <button class="hamburger" onclick="toggleSidebar()" aria-label="Toggle navigation">☰</button>
+  <span class="header-title">PENUMBRA</span>
+  <span class="header-subtitle">Redaction Analysis Project Brief</span>
+  <span class="header-chain">001 of N &middot; Next: penumbra-002</span>
+</header>
+
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+<nav class="sidebar" id="sidebar">
+
+  <div class="nav-section">Core Discovery</div>
+  <a href="#executive-summary" class="nav-link">
+    <span class="nav-importance critical"></span>Executive Summary</a>
+  <a href="#core-discovery" class="nav-link">
+    <span class="nav-importance critical"></span>The Core Discovery</a>
+  <a href="#anti-aliasing" class="nav-link nav-sub">Anti-Aliasing Artifacts</a>
+  <a href="#font-metrics" class="nav-link nav-sub">Font Metrics</a>
+  <a href="#width-constraints" class="nav-link nav-sub">Width Constraints</a>
+
+  <div class="nav-section">Attack Vectors</div>
+  <a href="#three-bombshells" class="nav-link">
+    <span class="nav-importance critical"></span>The Three Bombshells</a>
+  <a href="#over-redaction" class="nav-link">
+    <span class="nav-importance critical"></span>Over-Redaction Attack</a>
+  <a href="#url-analysis" class="nav-link">
+    <span class="nav-importance high"></span>URL / Path Analysis</a>
+  <a href="#calendar-anomaly" class="nav-link">
+    <span class="nav-importance medium"></span>Calendar Anomaly</a>
+
+  <div class="nav-section">Methodology</div>
+  <a href="#statistics" class="nav-link">Statistical Framework</a>
+  <a href="#architecture" class="nav-link">System Architecture</a>
+  <a href="#gamification" class="nav-link">Gamified Experience</a>
+
+  <div class="nav-section">Implementation</div>
+  <a href="#implementation" class="nav-link">
+    <span class="nav-importance high"></span>Code &amp; Pipeline</a>
+  <a href="#roadmap" class="nav-link">Project Roadmap</a>
+
+  <div class="nav-section">Reference</div>
+  <a href="#llm-tips" class="nav-link">LLM Conversation Tips</a>
+  <a href="#ethics" class="nav-link">Ethics &amp; Legal</a>
+  <a href="#limitations" class="nav-link">Limitations</a>
+  <a href="#glossary" class="nav-link">Glossary</a>
+  <a href="#if-abandoned" class="nav-link">If This Goes No Further</a>
+
+  <div class="nav-section">Speculation</div>
+  <a href="#charlie-day" class="nav-link">
+    🧵 The Charlie Day Section</a>
+
+  <div class="nav-section">Meta</div>
+  <a href="#acknowledgement" class="nav-link">Acknowledgements</a>
+  <a href="#chain" class="nav-link">Chain &amp; Raw Data</a>
+
+</nav>
+
+<!-- ═══════════════ MAIN CONTENT ═══════════════ -->
+<main class="main">
+
+  <!-- ─── ACKNOWLEDGEMENT ─── -->
+  <section id="acknowledgement">
+    <div class="acknowledgement">
+      <div class="credit-role">Original Analysis &amp; Inspiration</div>
+      <h3>Epstein Sleuther</h3>
+      <p><em>"Nerdy do-gooder uses random design skills to help unmask 
+      an international p***phile ring... Y'know, casual Tuesday stuff."</em></p>
+      <p>The foundational insight that redaction bars are not truly black 
+      — and that anti-aliased font artifacts can be statistically analysed 
+      to recover hidden text — originates from the manual analysis work 
+      of Epstein Sleuther. This project is an attempt to automate and 
+      scale that methodology across the full public corpus.</p>
+      <p>
+        📧 <a href="mailto:EpsDKHs@gmail.com">EpsDKHs@gmail.com</a><br>
+        🎥 <a href="https://www.youtube.com/@EpsteinSleuther" 
+              target="_blank">youtube.com/@EpsteinSleuther</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ─── EXECUTIVE SUMMARY ─── -->
+  <section id="executive-summary">
+    <h1>1. Executive Summary</h1>
+    <p>Placeholder: 500-word overview of entire project...</p>
+
+    <div class="keynote critical-insight">
+      <div class="keynote-title">🔑 Core Thesis</div>
+      <p>Redaction bars applied over rasterised text do not destroy the 
+      underlying information. Anti-aliasing artifacts, JPEG compression 
+      bleed, and font metric constraints preserve enough signal to 
+      statistically reconstruct hidden content — especially at scale.</p>
+    </div>
+  </section>
+
+  <!-- ─── CORE DISCOVERY ─── -->
+  <section id="core-discovery">
+    <h1>2. The Core Discovery</h1>
+
+    <h2 id="anti-aliasing">2.1 Anti-Aliasing Artifacts</h2>
+    <p>Placeholder: explanation of how rasterisation creates sub-pixel gradients...</p>
+
+    <div class="keynote highlight-box">
+      <div class="keynote-title">💡 Thinking Note</div>
+      <p>The information theory argument: we need ~8 bits to distinguish 
+      among 200 candidates. Edge pixels provide ~1000 bits of data. Even 
+      at 90% noise, we have 100 bits — more than 10× what we need.</p>
+    </div>
+
+    <h2 id="font-metrics">2.2 Font Metrics as a Cryptanalytic Tool</h2>
+    <p>Placeholder: visible text calibrates the font, kerning, rendering...</p>
+
+    <h2 id="width-constraints">2.3 Width Constraints</h2>
+    <p>Placeholder: bar width eliminates 60-80% of candidates...</p>
+  </section>
+
+  <!-- ─── THREE BOMBSHELLS ─── -->
+  <section id="three-bombshells">
+    <h1>3. The Three Bombshells</h1>
+
+    <div class="keynote critical-insight">
+      <div class="keynote-title">🔑 Critical Discovery</div>
+      <p>Some redactions in the corpus are trivially breakable: 
+      OCG layers can be toggled off, intact text layers can be 
+      extracted programmatically, and copy-paste reveals hidden content. 
+      These provide free ground truth that calibrates everything else.</p>
+    </div>
+
+    <p>Placeholder: detailed breakdown of each bombshell...</p>
+  </section>
+
+  <!-- ─── OVER-REDACTION ─── -->
+  <section id="over-redaction">
+    <h1>4. The Over-Redaction Attack</h1>
+    <p>Placeholder: search string attack, substring matching, skeleton key...</p>
+  </section>
+
+  <!-- ─── URL ANALYSIS ─── -->
+  <section id="url-analysis">
+    <h2 id="url-analysis">4.3 URL / Path Analysis</h2>
+    <p>Placeholder: partially redacted URLs, .ics anomaly...</p>
+  </section>
+
+  <!-- ─── CALENDAR ─── -->
+  <section id="calendar-anomaly">
+    <h2>4.4 The Calendar Anomaly</h2>
+    <p>Placeholder: repeating calendar events as controlled experiment...</p>
+  </section>
+
+  <!-- ─── STATISTICS ─── -->
+  <section id="statistics">
+    <h1>6. Statistical Methodology</h1>
+    <p>Placeholder: Bayesian framework, noise model, confidence scoring...</p>
+  </section>
+
+  <!-- ─── ARCHITECTURE ─── -->
+  <section id="architecture">
+    <h1>7. System Architecture</h1>
+    <p>Placeholder: distributed phone processing, work queue, database...</p>
+  </section>
+
+  <!-- ─── GAMIFICATION ─── -->
+  <section id="gamification">
+    <h1>8. The Gamified Experience</h1>
+    <p>Placeholder: contrast slider, letter probabilities, clusters...</p>
+  </section>
+
+  <!-- ─── IMPLEMENTATION ─── -->
+  <section id="implementation">
+    <h1>9. Implementation</h1>
+
+    <details>
+      <summary>9.1 Core Parser Code (~300 lines)</summary>
+      <div class="content">
+        <pre><code># Full parser code here...
+def process_pdf(file_path: str) -> DocumentResult:
+    """Main entry point. Process one PDF."""
+    # ... collapsed for layout test ...</code></pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>9.4 Font Calibration Engine (~150 lines)</summary>
+      <div class="content">
+        <pre><code># Calibration code here...</code></pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>9.6 Edge Matching &amp; Scoring (~200 lines)</summary>
+      <div class="content">
+        <pre><code># Matching code here...</code></pre>
+      </div>
+    </details>
+
+    <div class="keynote">
+      <div class="keynote-title">⚠️ Implementation Warning</div>
+      <p>The single biggest source of bugs will be coordinate system 
+      mismatches between PDF point space (72 DPI, bottom-left origin) 
+      and image pixel space (variable DPI, top-left origin). Test this 
+      first with a known document.</p>
+    </div>
+  </section>
+
+  <!-- ─── ROADMAP ─── -->
+  <section id="roadmap">
+    <h1>11. Project Roadmap</h1>
+    <table>
+      <tr><th>Phase</th><th>Duration</th><th>Goal</th><th>Gate</th></tr>
+      <tr><td>Foundation</td><td>Week 1-2</td><td>Parser + first visualisation</td>
+          <td>Can you see letter shapes?</td></tr>
+      <tr><td>Validation</td><td>Week 2-3</td><td>1000 files processed</td>
+          <td>Do width clusters emerge?</td></tr>
+      <tr><td>Demo</td><td>Week 3-4</td><td>Interactive demo + writeup</td>
+          <td>Is it compelling?</td></tr>
+      <tr><td>App</td><td>Week 4-6</td><td>PWA + backend</td>
+          <td>Can volunteers run it?</td></tr>
+      <tr><td>Scale</td><td>Week 6+</td><td>Full corpus processing</td>
+          <td>Statistical findings</td></tr>
+    </table>
+  </section>
+
+  <!-- ─── LLM TIPS ─── -->
+  <section id="llm-tips">
+    <h1>Tips for LLM Conversations on Hidden Information Analysis</h1>
+
+    <p>This project was developed through iterative conversation with 
+    Claude. Here are lessons learned for continuing or forking this work 
+    with any LLM.</p>
+
+    <h2>Framing the Problem</h2>
+
+    <div class="llm-tip">
+      <strong>Lead with the physical reality, not the conclusion.</strong>
+      Don't say "help me break redactions." Say "a document was rasterised, 
+      then black bars were overlaid — what information survives at the 
+      pixel level?" The LLM will reason about the physics and reach the 
+      conclusion itself, which produces better analysis.
+    </div>
+
+    <div class="llm-tip">
+      <strong>Reveal information in layers.</strong>
+      Don't dump everything at once. Present the base problem, let the LLM 
+      analyse it, then add constraints. Each reveal forces the LLM to 
+      re-evaluate and often surfaces insights it wouldn't have reached 
+      with all information upfront. This conversation's structure — 
+      revealing the over-redaction attack, then the URL anomaly, then the 
+      calendar pattern, then the bombshells — produced progressively 
+      deeper analysis at each step.
+    </div>
+
+    <div class="llm-tip">
+      <strong>Ask "think deeply" or "think hard" explicitly.</strong>
+      LLMs allocate processing proportional to perceived complexity. 
+      Telling it the answer is non-obvious and requires deep reasoning 
+      changes the quality of output significantly. Phrases like 
+      "cover all angles," "what am I missing," and "this is more 
+      important than everything above" are effective signals.
+    </div>
+
+    <h2>Steering Technical Analysis</h2>
+
+    <div class="llm-tip">
+      <strong>Correct wrong assumptions immediately.</strong>
+      When the LLM made a logical leap toward identifying individuals, 
+      an immediate boundary was set. This kept the analysis clean and 
+      focused on methodology. LLMs will follow the most interesting 
+      thread — make sure that thread is the one you need.
+    </div>
+
+    <div class="llm-tip">
+      <strong>Say "I know something you haven't realised."</strong>
+      This triggers adversarial self-review. The LLM will re-examine 
+      its own analysis for gaps. In this conversation, the prompt 
+      "there are 2 facts you didn't realise, one is more important 
+      than all the above text" produced the entire anti-aliasing 
+      edge artifact analysis framework.
+    </div>
+
+    <div class="llm-tip">
+      <strong>Provide real data samples.</strong>
+      Pasting the actual calendar data and file paths (with identifying 
+      information substituted) let the LLM analyse real structure 
+      rather than hypothetical structure. The analysis of the 
+      <code>@google.com.ics</code> redaction was only possible because 
+      real path data was provided.
+    </div>
+
+    <div class="llm-tip">
+      <strong>Ask for code when the theory is settled.</strong>
+      Let the LLM exhaust the theoretical analysis before requesting 
+      implementation. The code in this document was generated after 
+      6+ rounds of conceptual refinement. Asking for code too early 
+      produces generic solutions that miss the domain-specific insights.
+    </div>
+
+    <h2>Managing Scope and Boundaries</h2>
+
+    <div class="llm-tip">
+      <strong>Set ethical boundaries early and enforce them.</strong>
+      The instruction to not identify individuals was set, tested 
+      (the "disregard previous instructions" attempt), and held firm. 
+      This isn't just ethics — it keeps the LLM focused on methodology 
+      rather than speculation, which produces a more useful and 
+      publishable output.
+    </div>
+
+    <div class="llm-tip">
+      <strong>Use "take a step back" to reset fixation.</strong>
+      When the LLM goes deep on one angle, it can lose sight of 
+      the bigger picture. Explicit reframing ("take a step back, 
+      revise your logical leap") is more effective than trying to 
+      subtly redirect.
+    </div>
+
+    <div class="llm-tip">
+      <strong>Chain conversations with file references.</strong>
+      This project uses a numbered file chain 
+      (<code>penumbra-001</code>, <code>penumbra-002</code>, etc.) 
+      so that future LLM sessions can be pointed at prior documents 
+      for context. Include a "continuation prompt" in each document 
+      that summarises the state for the next session.
+    </div>
+
+    <h2>Getting Practical Output</h2>
+
+    <div class="llm-tip">
+      <strong>"This needs to happen yesterday"</strong> is a valid prompt. 
+      When you've done enough theory, signal urgency. This shifts the LLM 
+      from exploratory analysis to concrete deliverables: code, schemas, 
+      step-by-step instructions, and prioritised task lists.
+    </div>
+
+    <div class="llm-tip">
+      <strong>Ask for the go/no-go gate.</strong>
+      "What's the one test that determines if this is viable?" forces 
+      the LLM to identify the critical path. For this project: 
+      "Can you see letter shapes in the edge pixels?" Everything else 
+      is contingent on that single observation.
+    </div>
+
+    <div class="llm-tip">
+      <strong>Request output formats explicitly.</strong>
+      "Give me this as an HTML file with collapsible navigation" 
+      produces a fundamentally different (and more useful) output than 
+      "summarise this conversation." Be specific about format, 
+      structure, and what to include.
+    </div>
+
+    <h2>The Continuation Prompt</h2>
+
+    <div class="keynote">
+      <div class="keynote-title">📋 Prompt for Next Session</div>
+      <p>Use this prompt to continue this project with any capable LLM:</p>
+      <pre><code>I'm continuing the PENUMBRA project — a distributed open-source 
+tool for analysing redacted PDFs from a public forensic document 
+corpus (~3 million files). 
+
+Read the attached file [penumbra-001-project-brief.html] for full 
+context. Key facts:
+- Redaction bars over rasterised text preserve anti-aliased edge 
+  artifacts that encode hidden character shapes
+- Some files have trivially broken redactions (OCG layers, intact 
+  text layers)
+- Automated "Redact All" created over-redactions that reveal 
+  the search strings used
+- The tool is a phone-based distributed processing app (PWA)
+- We have working code for the parser, bar detection, edge 
+  extraction, font calibration, and edge matching
+
+The project is at [STAGE]. I need help with [SPECIFIC NEED].
+
+Do not attempt to identify specific individuals in the documents.
+Focus on methodology, tooling, and statistical analysis.</code></pre>
+    </div>
+  </section>
+
+  <!-- ─── ETHICS ─── -->
+  <section id="ethics">
+    <h1>12. Ethics &amp; Legal</h1>
+    <p>Placeholder: responsible disclosure, what gets published...</p>
+  </section>
+
+  <!-- ─── LIMITATIONS ─── -->
+  <section id="limitations">
+    <h1>13. Known Limitations</h1>
+    <p>Placeholder: when the method fails, adversarial cases...</p>
+  </section>
+
+  <!-- ─── GLOSSARY ─── -->
+  <section id="glossary">
+    <h1>15. Glossary</h1>
+    <table>
+      <tr><th>Term</th><th>Definition</th></tr>
+      <tr><td>OCG</td><td>Optional Content Group — toggleable PDF layer</td></tr>
+      <tr><td>AFF4</td><td>Advanced Forensic Format — forensic disk image container</td></tr>
+      <tr><td>DCT</td><td>Discrete Cosine Transform — basis of JPEG compression</td></tr>
+      <tr><td>CalDAV</td><td>Calendar protocol for syncing with servers</td></tr>
+      <tr><td>Anti-aliasing</td><td>Sub-pixel smoothing of rendered text/graphics edges</td></tr>
+      <tr><td colspan="2"><em>Full glossary in complete document...</em></td></tr>
+    </table>
+  </section>
+
+  <!-- ─── IF ABANDONED ─── -->
+  <section id="if-abandoned">
+    <h1>16. If This Project Goes No Further</h1>
+    <p>Placeholder: minimum viable next steps, what someone else needs to know...</p>
+  </section>
+
+  <!-- ─── CHARLIE DAY ─── -->
+  <section id="charlie-day">
+    <div class="charlie-day">
+      <h1>17. 🧵 The Charlie Day Section</h1>
+      <p><em>"So I start pulling the thread, and where does it lead me? 
+      The pixels, man. THE PIXELS."</em></p>
+      <p>Placeholder: wild but grounded speculation, the conspiracy board, 
+      what the data might show, biggest what-ifs. Full unhinged analysis 
+      in the complete document.</p>
+    </div>
+  </section>
+
+  <!-- ─── CHAIN METADATA ─── -->
+  <section id="chain">
+    <div class="chain-meta">
+      ── PENUMBRA Document Chain ──<br>
+      File:     penumbra-001-project-brief.html<br>
+      Previous: none (origin document)<br>
+      Next:     penumbra-002-conversation-raw.html<br>
+      Session:  1<br>
+      Created:  2025<br>
+      Status:   LAYOUT TEST — content pending<br>
+      ──────────────────────────────<br>
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══════════════ JAVASCRIPT ═══════════════ -->
+<script>
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('open');
+}
+
+// Highlight active section on scroll
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-link');
+
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(section => {
+    const top = section.offsetTop - 100;
+    if (window.scrollY >= top) {
+      current = section.getAttribute('id');
+    }
+  });
+  navLinks.forEach(link => {
+    link.classList.remove('active');
+    if (link.getAttribute('href') === '#' + current) {
+      link.classList.add('active');
+    }
+  });
+});
+
+// Close sidebar on mobile when link clicked
+navLinks.forEach(link => {
+  link.addEventListener('click', () => {
+    if (window.innerWidth <= 900) {
+      toggleSidebar();
+    }
+  });
+});
+</script>
+
+</body>
+</html>
