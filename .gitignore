@@ -1,2 +1,134 @@
-# Worktrees
-.worktrees/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Node.js (Frontend)
+node_modules/
+npm-debug.log
+yarn-error.log
+.next/
+out/
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+.thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+*temp*
+*tmp*
+
+# Test artifacts (cleanup after running tests)
+.pytest_cache/
+test_*.json
+e2e_test_results.json
+extracted_bar_*.png
+extracted_image_*.png
+extracted_bars/
+extracted_redactions/
+pdf_previews/
+problem_redactions/
+
+# Analysis artifacts
+bar_*.png
+current_*.png
+marked_*.png
+preview_*.png
+review_*.png
+count_redaction_bars*.py
+crop_*.py
+download_*.py
+extract_*.py
+create_grid.*
+analyze_bars.py
+bar_rating*.py
+create_all_redactions_batch.py
+
+# Documentation build artifacts
+docs/_build/
+
+# CLI/Local settings
+.claude/settings.local.json
+
+# Workspace
+.serena/
+~
+
+# Analysis outputs
+*.html
+demo_results.json
+original_redactions_batch_*.html
+redaction_review*.html
+
+# Temporary scripts used during development
+test_efta_pdf.py
+test_complete_parser.py
+test_server_integration.py
+validate_phase2.py
+batch_demo.py
+ws_client_demo.py
+
+# Planning/temp docs
+2026-03-02-*.txt
+MULTI_LINE_RECALIBRATION.md
+PHASE2_OCR_DETECTION.md
+ANOMALIES_TO_INVESTIGATE.md
+playwright.md
+
+# Keep test fixtures and core files
+!tests/fixtures/
+!parser/
+!frontend/
+!*.md
+!LICENSE
+!*.json
