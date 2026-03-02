@@ -279,34 +279,68 @@ async def get_analysis_status(analysis_id: str):
 @app.websocket("/ws/analyze")
 async def websocket_analyze(websocket: WebSocket):
     """
-    WebSocket endpoint for streaming analysis results
+    WebSocket endpoint for streaming real-time analysis results.
     
-    Client sends: {"document_id": "...", "techniques": [...]}
-    Server streams: {"page": N, "technique": "...", "progress": X%}
+    Client sends: {"document_id": "...", "techniques": [...], "analysis_id": "..."}
+    Server streams:
+    - {"type": "start", "document_id": "...", "total_pages": N}
+    - {"type": "page_start", "page": N}
+    - {"type": "technique", "technique": "...", "success": bool, "confidence": float}
+    - {"type": "page_complete", "page": N, "progress": X%}
+    - {"type": "complete", "pages_analyzed": N, "total_time": X.Xs}
+    - {"type": "error", "error": "..."}
     """
     await websocket.accept()
+    analysis_id = None
+    
     try:
         # Receive analysis request
         data = await websocket.receive_json()
         document_id = data.get("document_id")
         techniques = data.get("techniques", list(coordinator.techniques.keys()))
+        analysis_id = data.get("analysis_id", f"{document_id}_{int(time.time())}")
         
         # Validate document
         if document_id not in document_registry:
-            await websocket.send_json({"error": "Document not found"})
+            await websocket.send_json({"type": "error", "error": "Document not found"})
             await websocket.close()
             return
         
         doc_info = document_registry[document_id]
         pdf_path = doc_info["path"]
         
+        # Send start message
+        await websocket.send_json({
+            "type": "start",
+            "analysis_id": analysis_id,
+            "document_id": document_id,
+            "techniques_count": len(techniques)
+        })
+        
         # Open PDF
         doc = PDFDocument(pdf_path)
         total_pages = doc.page_count
         
+        await websocket.send_json({
+            "type": "document_info",
+            "total_pages": total_pages,
+            "page_count": total_pages
+        })
+        
+        # Track all results for final aggregation
+        all_results = []
+        start_time = time.time()
+        
         # Process each page and stream results
         for page_num in range(total_pages):
             page = doc._doc[page_num]
+            
+            # Notify page processing started
+            await websocket.send_json({
+                "type": "page_start",
+                "page": page_num + 1,
+                "total_pages": total_pages
+            })
             
             # Run techniques
             page_results = coordinator.run_page(
@@ -315,33 +349,89 @@ async def websocket_analyze(websocket: WebSocket):
                 selected_techniques=techniques
             )
             
-            # Stream each technique result
+            # Stream each technique result immediately
+            success_count = 0
             for result in page_results:
+                all_results.append(result)
+                
                 await websocket.send_json({
+                    "type": "technique_result",
                     "page": page_num + 1,
-                    "total_pages": total_pages,
                     "technique": result.technique_name,
                     "success": result.success,
-                    "confidence": result.confidence,
-                    "progress": int((page_num / total_pages) * 100)
+                    "confidence": round(result.confidence, 3),
+                    "error": result.error
                 })
+                
+                if result.success:
+                    success_count += 1
+            
+            # Send page completion with progress
+            progress = int(((page_num + 1) / total_pages) * 100)
+            await websocket.send_json({
+                "type": "page_complete",
+                "page": page_num + 1,
+                "total_pages": total_pages,
+                "progress": progress,
+                "techniques_succeeded": success_count,
+                "techniques_total": len(page_results)
+            })
             
             # Small delay to allow frontend to process
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.05)
         
         doc.close()
         
-        # Send completion message
-        await websocket.send_json({
+        # Calculate statistics
+        total_time = time.time() - start_time
+        success_count = sum(1 for r in all_results if r.success)
+        
+        # Store analysis results
+        analysis_results[analysis_id] = {
+            "document_id": document_id,
             "status": "completed",
             "pages_analyzed": total_pages,
-            "message": "Analysis complete"
+            "techniques_used": techniques,
+            "results": [
+                {
+                    "technique": r.technique_name,
+                    "success": r.success,
+                    "confidence": r.confidence
+                }
+                for r in all_results
+            ],
+            "timestamp": time.time(),
+            "processing_time": total_time
+        }
+        
+        # Send completion message with summary
+        await websocket.send_json({
+            "type": "complete",
+            "analysis_id": analysis_id,
+            "pages_analyzed": total_pages,
+            "total_time": round(total_time, 2),
+            "techniques_run": len(techniques),
+            "total_results": len(all_results),
+            "successful_results": success_count,
+            "success_rate": f"{(success_count / len(all_results) * 100):.1f}%" if all_results else "0%",
+            "status": "completed"
         })
     
     except Exception as e:
-        await websocket.send_json({"error": str(e)})
+        import traceback
+        error_msg = str(e)
+        traceback.print_exc()
+        
+        await websocket.send_json({
+            "type": "error",
+            "error": error_msg,
+            "analysis_id": analysis_id
+        })
     finally:
-        await websocket.close()
+        try:
+            await websocket.close()
+        except:
+            pass
 
 
 @app.delete("/documents/{document_id}")
