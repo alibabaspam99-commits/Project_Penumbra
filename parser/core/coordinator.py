@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 from parser.techniques.base import BaseTechnique
 from parser.core.results import TechniqueResult
 
@@ -7,6 +7,16 @@ class ParserCoordinator:
 
     def __init__(self):
         self.techniques: Dict[str, BaseTechnique] = {}
+
+    def _create_error_result(self, technique_name: str, error_msg: str) -> TechniqueResult:
+        """Create a TechniqueResult for error conditions."""
+        return TechniqueResult(
+            technique_name=technique_name,
+            success=False,
+            data={},
+            confidence=0.0,
+            error=error_msg
+        )
 
     def register_technique(self, technique: BaseTechnique):
         """Register a technique for use"""
@@ -45,12 +55,30 @@ class ParserCoordinator:
 
         return results
 
-    def run_phase2_page(self, page, pdf_document) -> Dict[str, TechniqueResult]:
+    def run_phase2_page(self, page: Any, pdf_document: Any) -> Dict[str, TechniqueResult]:
         """
-        Run Phase 2 OCR-based techniques in sequence.
-        Passes prior technique results to each subsequent technique.
+        Run Phase 2 OCR-based techniques in sequence with proper result passing.
 
-        Returns dict with results from all Phase 2 techniques.
+        Execution order with dependencies:
+        1. bar_detector(page, pdf_document) - Detects redaction bars in image
+        2. ocr_text_extraction(page, pdf_document) - Extracts text and bounding boxes
+        3. offset_detection(prior_results from 1-2) - Finds text-bar relationships
+        4. multi_line_clustering(prior_results from 1-3) - Groups adjacent bars
+
+        Each technique receives prior_results dict containing data from all previous techniques.
+
+        Args:
+            page: PDF page object (mupdf/fitz)
+            pdf_document: PDFDocument wrapper containing document metadata
+
+        Returns:
+            Dict[str, TechniqueResult] mapping technique names to results.
+            Keys: 'bar_detection', 'ocr_text_extraction', 'offset_detection', 'multi_line_clustering'
+
+        Note:
+            - Unregistered techniques are silently skipped
+            - Technique-level exceptions are caught and returned as failed TechniqueResult
+            - One technique failure does not prevent others from running (graceful degradation)
         """
         results_dict = {}
 
@@ -63,12 +91,9 @@ class ParserCoordinator:
                         bar_result = bar_detector.run(page, pdf_document=pdf_document)
                         results_dict['bar_detection'] = bar_result
                 except Exception as e:
-                    results_dict['bar_detection'] = TechniqueResult(
-                        technique_name='bar_detector',
-                        success=False,
-                        data={},
-                        confidence=0.0,
-                        error=f"Bar detector error: {str(e)}"
+                    results_dict['bar_detection'] = self._create_error_result(
+                        'bar_detector',
+                        f"Bar detector error: {str(e)}"
                     )
 
             # Step 2: Run OCR text extraction
@@ -79,12 +104,9 @@ class ParserCoordinator:
                         ocr_result = ocr_extractor.run(page, pdf_document=pdf_document)
                         results_dict['ocr_text_extraction'] = ocr_result
                 except Exception as e:
-                    results_dict['ocr_text_extraction'] = TechniqueResult(
-                        technique_name='ocr_text_extraction',
-                        success=False,
-                        data={},
-                        confidence=0.0,
-                        error=f"OCR extraction error: {str(e)}"
+                    results_dict['ocr_text_extraction'] = self._create_error_result(
+                        'ocr_text_extraction',
+                        f"OCR extraction error: {str(e)}"
                     )
 
             # Step 3: Run offset detection (depends on bar_detection and ocr_text_extraction)
@@ -98,16 +120,15 @@ class ParserCoordinator:
                     if 'ocr_text_extraction' in results_dict:
                         prior_results['ocr_text_extraction'] = results_dict['ocr_text_extraction'].data
 
-                    if offset_detector.can_process(page):
-                        offset_result = offset_detector.run(prior_results)
+                    # Offset detection depends on prior results; check returns True if results are available
+                    prior_results_available = bool(prior_results)
+                    if prior_results_available and offset_detector:
+                        offset_result = offset_detector.run(prior_results, pdf_document=pdf_document)
                         results_dict['offset_detection'] = offset_result
                 except Exception as e:
-                    results_dict['offset_detection'] = TechniqueResult(
-                        technique_name='offset_detection',
-                        success=False,
-                        data={},
-                        confidence=0.0,
-                        error=f"Offset detection error: {str(e)}"
+                    results_dict['offset_detection'] = self._create_error_result(
+                        'offset_detection',
+                        f"Offset detection error: {str(e)}"
                     )
 
             # Step 4: Run multi-line clustering (depends on all prior results)
@@ -123,21 +144,26 @@ class ParserCoordinator:
                     if 'offset_detection' in results_dict:
                         prior_results['offset_detection'] = results_dict['offset_detection'].data
 
-                    if clusterer.can_process(page):
+                    # Multi-line clustering depends on prior results; check returns True if results are available
+                    prior_results_available = bool(prior_results)
+                    if prior_results_available and clusterer:
                         clustering_result = clusterer.run(prior_results)
                         results_dict['multi_line_clustering'] = clustering_result
                 except Exception as e:
-                    results_dict['multi_line_clustering'] = TechniqueResult(
-                        technique_name='multi_line_clustering',
-                        success=False,
-                        data={},
-                        confidence=0.0,
-                        error=f"Multi-line clustering error: {str(e)}"
+                    results_dict['multi_line_clustering'] = self._create_error_result(
+                        'multi_line_clustering',
+                        f"Multi-line clustering error: {str(e)}"
                     )
 
             return results_dict
 
         except Exception as e:
             return {
-                'error': f"Phase 2 processing failed: {str(e)}"
+                'error': TechniqueResult(
+                    technique_name='phase2_coordinator',
+                    success=False,
+                    data={},
+                    confidence=0.0,
+                    error=f"Phase 2 processing failed: {str(e)}"
+                )
             }
