@@ -29,6 +29,7 @@ from parser.techniques.edge_extractor import EdgeExtractor
 from parser.techniques.font_metrics import FontMetricsAnalyzer
 from parser.techniques.character_edge_matcher import CharacterEdgeMatcher
 from parser.techniques.full_edge_matcher import FullEdgeSignatureMatcher
+from parser.techniques.ocr_text_extraction import OCRTextExtraction
 
 # Create FastAPI app
 app = FastAPI(
@@ -68,6 +69,7 @@ coordinator.register_technique(EdgeExtractor())
 coordinator.register_technique(FontMetricsAnalyzer())
 coordinator.register_technique(CharacterEdgeMatcher())
 coordinator.register_technique(FullEdgeSignatureMatcher())
+coordinator.register_technique(OCRTextExtraction())
 
 
 @app.get("/")
