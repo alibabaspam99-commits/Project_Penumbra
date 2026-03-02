@@ -30,6 +30,7 @@ from parser.techniques.font_metrics import FontMetricsAnalyzer
 from parser.techniques.character_edge_matcher import CharacterEdgeMatcher
 from parser.techniques.full_edge_matcher import FullEdgeSignatureMatcher
 from parser.techniques.ocr_text_extraction import OCRTextExtraction
+from parser.core.batch import BatchProcessor
 
 # Create FastAPI app
 app = FastAPI(
@@ -70,6 +71,10 @@ coordinator.register_technique(FontMetricsAnalyzer())
 coordinator.register_technique(CharacterEdgeMatcher())
 coordinator.register_technique(FullEdgeSignatureMatcher())
 coordinator.register_technique(OCRTextExtraction())
+
+# Initialize batch processor
+batch_processor = BatchProcessor(coordinator, max_workers=4)
+batch_jobs = {}  # Track active batch jobs
 
 
 @app.get("/")
@@ -371,6 +376,161 @@ async def delete_document(document_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Batch Processing endpoints
+@app.post("/batch/create")
+async def create_batch(batch_data: dict):
+    """Create a new batch processing job."""
+    try:
+        batch_id = batch_data.get("batch_id")
+        pdf_ids = batch_data.get("document_ids", [])
+        techniques = batch_data.get("techniques")
+        
+        if not batch_id or not pdf_ids:
+            raise HTTPException(status_code=400, detail="Missing batch_id or document_ids")
+        
+        # Get PDF paths from document registry
+        pdf_paths = []
+        for doc_id in pdf_ids:
+            if doc_id in document_registry:
+                pdf_paths.append(document_registry[doc_id]["path"])
+        
+        if not pdf_paths:
+            raise HTTPException(status_code=400, detail="No valid documents found")
+        
+        # Create batch
+        job = batch_processor.create_batch(batch_id, pdf_paths, techniques)
+        batch_jobs[batch_id] = job
+        
+        return {
+            "success": True,
+            "data": {
+                "batch_id": batch_id,
+                "total": job.total_count,
+                "status": job.status.value
+            }
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/batch/{batch_id}/start")
+async def start_batch(batch_id: str):
+    """Start processing a batch job."""
+    try:
+        job = batch_processor.get_batch(batch_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Batch not found")
+        
+        # Process in background
+        import threading
+        thread = threading.Thread(target=batch_processor.process_batch, args=(batch_id,))
+        thread.daemon = True
+        thread.start()
+        
+        return {
+            "success": True,
+            "data": {
+                "batch_id": batch_id,
+                "status": "processing"
+            }
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/batch/{batch_id}/status")
+async def get_batch_status(batch_id: str):
+    """Get batch processing status."""
+    try:
+        job = batch_processor.get_batch(batch_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Batch not found")
+        
+        return {
+            "success": True,
+            "data": job.to_dict()
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/batch/{batch_id}/summary")
+async def get_batch_summary(batch_id: str):
+    """Get batch processing summary."""
+    try:
+        summary = batch_processor.get_batch_summary(batch_id)
+        if not summary:
+            raise HTTPException(status_code=404, detail="Batch not found")
+        
+        return {
+            "success": True,
+            "data": summary
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/batch/{batch_id}/results")
+async def get_batch_results(batch_id: str, skip: int = 0, limit: int = 50):
+    """Get batch processing results."""
+    try:
+        job = batch_processor.get_batch(batch_id)
+        if not job:
+            raise HTTPException(status_code=404, detail="Batch not found")
+        
+        all_results = batch_processor.get_batch_results(batch_id)
+        results = all_results[skip:skip+limit]
+        
+        # Convert to dict format
+        result_dicts = []
+        for r in results:
+            result_dicts.append({
+                "pdf_path": r.pdf_path,
+                "success": r.success,
+                "page_count": r.page_count,
+                "technique_results": r.technique_results,
+                "error": r.error,
+                "processing_time": r.processing_time
+            })
+        
+        return {
+            "success": True,
+            "data": {
+                "batch_id": batch_id,
+                "total": len(all_results),
+                "returned": len(result_dicts),
+                "results": result_dicts
+            }
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/batch/{batch_id}/export")
+async def export_batch_results(batch_id: str, output_path: str = "batch_results.json"):
+    """Export batch results to JSON file."""
+    try:
+        if batch_processor.export_results(batch_id, output_path):
+            return {
+                "success": True,
+                "data": {
+                    "batch_id": batch_id,
+                    "output_file": output_path,
+                    "message": "Results exported successfully"
+                }
+            }
+        else:
+            raise HTTPException(status_code=500, detail="Export failed")
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # User endpoints (placeholder - no auth in simple server)
 @app.get("/user/profile")
 async def get_user_profile():
@@ -445,7 +605,9 @@ async def health_check():
             "status": "healthy",
             "documents": len(document_registry),
             "analyses": len(analysis_results),
-            "techniques": len(coordinator.techniques)
+            "batch_jobs": len(batch_jobs),
+            "techniques": len(coordinator.techniques),
+            "max_batch_workers": batch_processor.max_workers
         }
     }
 
