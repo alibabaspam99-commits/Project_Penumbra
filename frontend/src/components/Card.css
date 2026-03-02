@@ -1,0 +1,162 @@
+.card {
+  background-color: #ffffff;
+  border-radius: 0.75rem;
+  transition: all 0.3s ease;
+  border: 1px solid #e5e7eb;
+}
+
+.dark .card {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+
+/* Card Variants */
+.card-default {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dark .card-default {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.card-outlined {
+  border: 2px solid #e5e7eb;
+  box-shadow: none;
+}
+
+.dark .card-outlined {
+  border-color: #334155;
+}
+
+.card-elevated {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.dark .card-elevated {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Interactive Cards */
+.card.interactive {
+  cursor: pointer;
+}
+
+.card.interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.dark .card.interactive:hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.card.interactive:active {
+  transform: translateY(0);
+}
+
+/* Card Padding */
+.card-padding-small {
+  padding: 1rem;
+}
+
+.card-padding-medium {
+  padding: 1.5rem;
+}
+
+.card-padding-large {
+  padding: 2rem;
+}
+
+/* Card Header */
+.card-header {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dark .card-header {
+  border-bottom-color: #334155;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: inherit;
+}
+
+.card-subtitle {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.dark .card-subtitle {
+  color: #94a3b8;
+}
+
+/* Card Content */
+.card-content {
+  color: inherit;
+}
+
+/* Card Grid */
+.card-grid {
+  display: grid;
+  width: 100%;
+}
+
+.card-grid-cols-1 {
+  grid-template-columns: 1fr;
+}
+
+.card-grid-cols-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.card-grid-cols-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.card-grid-cols-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.card-grid-gap-small {
+  gap: 1rem;
+}
+
+.card-grid-gap-medium {
+  gap: 1.5rem;
+}
+
+.card-grid-gap-large {
+  gap: 2rem;
+}
+
+/* Responsive Grid */
+@media (max-width: 1024px) {
+  .card-grid-cols-4 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .card-grid-cols-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .card-grid-cols-4,
+  .card-grid-cols-3,
+  .card-grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .card-padding-large {
+    padding: 1rem;
+  }
+
+  .card-title {
+    font-size: 1.1rem;
+  }
+}

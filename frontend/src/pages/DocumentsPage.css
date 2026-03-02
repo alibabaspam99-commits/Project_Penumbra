@@ -1,0 +1,276 @@
+.documents-page {
+  width: 100%;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2rem;
+  color: #1f2937;
+}
+
+.dark .page-header h1 {
+  color: #f1f5f9;
+}
+
+.page-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 1.1rem;
+}
+
+.dark .page-header p {
+  color: #94a3b8;
+}
+
+.error-message {
+  padding: 1.5rem;
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 0.75rem;
+  text-align: center;
+}
+
+.dark .error-message {
+  background-color: rgba(220, 38, 38, 0.1);
+  border-color: rgba(220, 38, 38, 0.3);
+}
+
+.error-message p {
+  margin: 0 0 1rem 0;
+  color: #dc2626;
+}
+
+.dark .error-message p {
+  color: #fca5a5;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+}
+
+.empty-content {
+  padding: 2rem;
+}
+
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.empty-content h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  color: #1f2937;
+}
+
+.dark .empty-content h3 {
+  color: #f1f5f9;
+}
+
+.empty-content p {
+  margin: 0 0 1.5rem 0;
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.dark .empty-content p {
+  color: #94a3b8;
+}
+
+/* Document Card */
+.document-card {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.doc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.doc-icon {
+  font-size: 2.5rem;
+}
+
+.doc-status {
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-completed {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.dark .status-completed {
+  background-color: rgba(5, 150, 105, 0.2);
+  color: #86efac;
+}
+
+.status-processing {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.dark .status-processing {
+  background-color: rgba(217, 119, 6, 0.2);
+  color: #fcd34d;
+}
+
+.status-failed {
+  background-color: #fee2e2;
+  color: #7f1d1d;
+}
+
+.dark .status-failed {
+  background-color: rgba(220, 38, 38, 0.2);
+  color: #fca5a5;
+}
+
+.status-pending {
+  background-color: #e0e7ff;
+  color: #312e81;
+}
+
+.dark .status-pending {
+  background-color: rgba(102, 126, 234, 0.2);
+  color: #a5b4fc;
+}
+
+.doc-title {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  word-break: break-word;
+}
+
+.dark .doc-title {
+  color: #f1f5f9;
+}
+
+/* Document Meta */
+.doc-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.dark .doc-meta {
+  background-color: #0f172a;
+  border-color: #334155;
+}
+
+.meta-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+}
+
+.meta-label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.dark .meta-label {
+  color: #94a3b8;
+}
+
+.meta-value {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.dark .meta-value {
+  color: #f1f5f9;
+}
+
+/* Document Error */
+.doc-error {
+  padding: 0.75rem;
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.dark .doc-error {
+  background-color: rgba(220, 38, 38, 0.1);
+  border-color: rgba(220, 38, 38, 0.3);
+}
+
+.doc-error p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #dc2626;
+}
+
+.dark .doc-error p {
+  color: #fca5a5;
+}
+
+/* Document Actions */
+.doc-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: auto;
+}
+
+.doc-actions button {
+  flex: 1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .doc-icon {
+    font-size: 2rem;
+  }
+
+  .doc-title {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .doc-header {
+    margin-bottom: 0.75rem;
+  }
+
+  .doc-meta {
+    padding: 0.75rem;
+  }
+
+  .meta-item {
+    font-size: 0.8rem;
+  }
+
+  .doc-actions {
+    flex-direction: column;
+  }
+}

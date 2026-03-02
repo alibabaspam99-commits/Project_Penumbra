@@ -1,0 +1,526 @@
+.leaderboard-page {
+  width: 100%;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.page-header h1 {
+  margin: 0 0 0.5rem 0;
+  font-size: 2.5rem;
+  color: #1f2937;
+}
+
+.dark .page-header h1 {
+  color: #f1f5f9;
+}
+
+.page-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 1.1rem;
+}
+
+.dark .page-header p {
+  color: #94a3b8;
+}
+
+/* Leaderboard Controls */
+.leaderboard-controls {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.timeframe-selector {
+  display: flex;
+  gap: 0.75rem;
+  background-color: #f3f4f6;
+  padding: 0.5rem;
+  border-radius: 0.75rem;
+}
+
+.dark .timeframe-selector {
+  background-color: #1e293b;
+}
+
+.timeframe-btn {
+  padding: 0.6rem 1.2rem;
+  border: none;
+  background-color: transparent;
+  color: #6b7280;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.dark .timeframe-btn {
+  color: #94a3b8;
+}
+
+.timeframe-btn:hover {
+  background-color: rgba(102, 126, 234, 0.1);
+  color: #667eea;
+}
+
+.dark .timeframe-btn:hover {
+  color: #5a67d8;
+}
+
+.timeframe-btn.active {
+  background-color: white;
+  color: #667eea;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dark .timeframe-btn.active {
+  background-color: #334155;
+  color: #5a67d8;
+}
+
+/* Leaderboard Container */
+.leaderboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Top Three */
+.top-three {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.top-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.top-card.rank-gold {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+}
+
+.top-card.rank-silver {
+  border-color: #d1d5db;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+}
+
+.top-card.rank-bronze {
+  border-color: #a16207;
+  background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
+}
+
+.dark .top-card.rank-gold {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
+}
+
+.dark .top-card.rank-silver {
+  background: linear-gradient(135deg, rgba(107, 114, 128, 0.2) 0%, rgba(107, 114, 128, 0.1) 100%);
+}
+
+.dark .top-card.rank-bronze {
+  background: linear-gradient(135deg, rgba(161, 98, 7, 0.2) 0%, rgba(161, 98, 7, 0.1) 100%);
+}
+
+.top-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+}
+
+.medal {
+  font-size: 2.5rem;
+}
+
+.avatar-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+}
+
+.avatar-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-initial {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #1f2937;
+}
+
+.dark .avatar-initial {
+  color: #f1f5f9;
+}
+
+.top-card .username {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #1f2937;
+}
+
+.dark .top-card .username {
+  color: #f1f5f9;
+}
+
+.top-stats {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+  justify-content: center;
+}
+
+.top-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.top-stat .stat-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #667eea;
+}
+
+.dark .top-stat .stat-value {
+  color: #5a67d8;
+}
+
+.top-stat .stat-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.dark .top-stat .stat-label {
+  color: #94a3b8;
+}
+
+.divider {
+  width: 1px;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.top-footer {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.dark .top-footer {
+  color: #94a3b8;
+}
+
+/* Leaderboard Table */
+.leaderboard-table {
+  overflow-x: auto;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 60px 1fr 120px 100px 120px;
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-bottom: 2px solid #e5e7eb;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #6b7280;
+  sticky: 0;
+}
+
+.dark .table-header {
+  background-color: #0f172a;
+  border-bottom-color: #334155;
+  color: #94a3b8;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 120px 100px 120px;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  align-items: center;
+  transition: background-color 0.3s ease;
+}
+
+.dark .table-row {
+  border-bottom-color: #334155;
+}
+
+.table-row:hover {
+  background-color: #f9fafb;
+}
+
+.dark .table-row:hover {
+  background-color: #0f172a;
+}
+
+.table-row.rank-gold {
+  background-color: #fef9e7;
+}
+
+.dark .table-row.rank-gold {
+  background-color: rgba(245, 158, 11, 0.1);
+}
+
+.table-row.rank-silver {
+  background-color: #f3f4f6;
+}
+
+.dark .table-row.rank-silver {
+  background-color: rgba(107, 114, 128, 0.05);
+}
+
+.table-row.rank-bronze {
+  background-color: #fef5e7;
+}
+
+.dark .table-row.rank-bronze {
+  background-color: rgba(161, 98, 7, 0.1);
+}
+
+/* Table Columns */
+.col-rank {
+  text-align: center;
+}
+
+.rank-badge {
+  font-size: 1.5rem;
+}
+
+.col-user {
+  min-width: 200px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-info img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-initial-small {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #1f2937;
+}
+
+.dark .avatar-initial-small {
+  background-color: #334155;
+  color: #f1f5f9;
+}
+
+.user-info span {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.dark .user-info span {
+  color: #f1f5f9;
+}
+
+.col-points {
+  text-align: center;
+  font-weight: 600;
+  color: #f59e0b;
+}
+
+.col-pdfs {
+  text-align: center;
+  color: #6b7280;
+}
+
+.dark .col-pdfs {
+  color: #94a3b8;
+}
+
+.col-accuracy {
+  text-align: right;
+}
+
+.accuracy-badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  background-color: #dbeafe;
+  color: #0c4a6e;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.dark .accuracy-badge {
+  background-color: rgba(30, 58, 138, 0.3);
+  color: #60a5fa;
+}
+
+/* Leaderboard Stats */
+.leaderboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.stat-box {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.stat-icon {
+  font-size: 2rem;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 1.75rem;
+  font-weight: bold;
+  color: #667eea;
+}
+
+.dark .stat-number {
+  color: #5a67d8;
+}
+
+.stat-title {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+.dark .stat-title {
+  color: #94a3b8;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .top-three {
+    grid-template-columns: 1fr;
+  }
+
+  .table-header,
+  .table-row {
+    grid-template-columns: 50px 1fr 100px 80px 100px;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .col-user {
+    min-width: 150px;
+  }
+
+  .user-info span {
+    font-size: 0.9rem;
+  }
+
+  .table-header,
+  .table-row {
+    grid-template-columns: 40px 1fr 80px 60px;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .col-accuracy {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .page-header p {
+    font-size: 1rem;
+  }
+
+  .timeframe-selector {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .timeframe-btn {
+    flex: 1;
+    padding: 0.75rem;
+  }
+
+  .top-card-content {
+    gap: 0.75rem;
+  }
+
+  .avatar-circle {
+    width: 60px;
+    height: 60px;
+  }
+
+  .medal {
+    font-size: 2rem;
+  }
+
+  .top-card .username {
+    font-size: 1.1rem;
+  }
+
+  .top-stats {
+    gap: 0.75rem;
+  }
+
+  .top-stat .stat-value {
+    font-size: 1.3rem;
+  }
+
+  .table-header,
+  .table-row {
+    grid-template-columns: 40px 1fr 60px;
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .col-pdfs,
+  .col-accuracy {
+    display: none;
+  }
+
+  .col-points {
+    text-align: right;
+  }
+}

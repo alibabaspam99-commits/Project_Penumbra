@@ -1,0 +1,6 @@
+export { UploadPage } from './UploadPage'
+export { DocumentsPage } from './DocumentsPage'
+export { ResultsPage } from './ResultsPage'
+export { ProfilePage } from './ProfilePage'
+export { LeaderboardPage } from './LeaderboardPage'
+export { SettingsPage } from './SettingsPage'
